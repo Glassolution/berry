@@ -14,7 +14,7 @@ const WelcomeScreen = ({ navigation }: Props) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.heroContainer}>
         <Image
-          source={require('../../../assets/images/react-logo.png')}
+          source={require('../../assets/images/react-logo.png')}
           resizeMode="cover"
           style={styles.heroImage}
         />
