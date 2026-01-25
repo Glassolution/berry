@@ -9,24 +9,28 @@ import { StatusBar } from 'expo-status-bar';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
 
+import { useRouter } from 'expo-router';
+
 type Props = NativeStackScreenProps<RootStackParamList, 'WelcomeScreen'>;
 
 const { width, height } = Dimensions.get('window');
 
-const WelcomeScreen = ({ navigation }: Props) => {
+const WelcomeScreen = () => {
+  const router = useRouter();
+
   const handleStart = () => {
-    navigation.navigate('QuizGenderScreen');
+    router.push('/QuizGenderScreen');
   };
 
   return (
     <View style={styles.container}>
       {/* Background Icons */}
       <View style={styles.backgroundIconsContainer} pointerEvents="none">
-        <MaterialIcons name="fitness-center" size={60} color="#000" style={[styles.bgIcon, { top: '25%', left: 40, transform: [{ rotate: '12deg' }] }]} />
-        <MaterialIcons name="directions-run" size={72} color="#000" style={[styles.bgIcon, { top: '33%', right: 40, transform: [{ rotate: '-12deg' }] }]} />
-        <MaterialIcons name="favorite-border" size={96} color="#000" style={[styles.bgIcon, { top: '50%', left: '25%', transform: [{ rotate: '45deg' }] }]} />
-        <MaterialIcons name="restaurant" size={48} color="#000" style={[styles.bgIcon, { bottom: '33%', right: '25%', transform: [{ rotate: '-12deg' }] }]} />
-        <MaterialIcons name="monitor-weight" size={60} color="#000" style={[styles.bgIcon, { bottom: '25%', left: '50%', transform: [{ rotate: '12deg' }] }]} />
+        <MaterialIcons name="fitness-center" size={60} color="#000" style={StyleSheet.flatten([styles.bgIcon, { top: '25%', left: 40, transform: [{ rotate: '12deg' }] }])} />
+        <MaterialIcons name="directions-run" size={72} color="#000" style={StyleSheet.flatten([styles.bgIcon, { top: '33%', right: 40, transform: [{ rotate: '-12deg' }] }])} />
+        <MaterialIcons name="favorite-border" size={96} color="#000" style={StyleSheet.flatten([styles.bgIcon, { top: '50%', left: '25%', transform: [{ rotate: '45deg' }] }])} />
+        <MaterialIcons name="restaurant" size={48} color="#000" style={StyleSheet.flatten([styles.bgIcon, { bottom: '33%', right: '25%', transform: [{ rotate: '-12deg' }] }])} />
+        <MaterialIcons name="monitor-weight" size={60} color="#000" style={StyleSheet.flatten([styles.bgIcon, { bottom: '25%', left: '50%', transform: [{ rotate: '12deg' }] }])} />
       </View>
 
       <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>

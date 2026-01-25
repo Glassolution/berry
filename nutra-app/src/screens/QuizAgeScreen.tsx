@@ -5,7 +5,9 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { useQuiz } from '../context/QuizContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'QuizAgeScreen'>;
 
@@ -36,7 +38,9 @@ const SPACING_HEIGHT = (PICKER_HEIGHT - ITEM_HEIGHT) / 2;
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
-const QuizAgeScreen = ({ navigation }: Props) => {
+const QuizAgeScreen = () => {
+  const router = useRouter();
+  const { updateQuizData } = useQuiz();
   const [selectedAge, setSelectedAge] = useState(18); // Default from HTML
   const scrollY = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -44,7 +48,7 @@ const QuizAgeScreen = ({ navigation }: Props) => {
   const currentAgeIndexRef = useRef(AGES.indexOf(18));
 
   const handleBack = () => {
-    navigation.goBack();
+    router.back();
   };
 
   const handleNext = () => {
@@ -53,7 +57,8 @@ const QuizAgeScreen = ({ navigation }: Props) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }, 50);
     console.log('Next pressed, age:', selectedAge);
-    navigation.navigate('QuizGoalScreen');
+    updateQuizData({ age: selectedAge });
+    router.push('/QuizMeasurementsScreen');
   };
 
   // Animate progress bar
@@ -116,7 +121,8 @@ const QuizAgeScreen = ({ navigation }: Props) => {
     setSelectedAge(AGES[clampedIndex]);
   };
 
-  const renderItem = ({ item, index }: { item: number; index: number }) => {
+  const renderItem = ({ item, index }: { item: any; index: number }) => {
+    const numericItem = item as number;
     const inputRange = [
       (index - 2) * ITEM_HEIGHT,
       (index - 1) * ITEM_HEIGHT,
@@ -164,11 +170,11 @@ const QuizAgeScreen = ({ navigation }: Props) => {
       }}>
         <Animated.Text 
           allowFontScaling={false}
-          style={[
+          style={StyleSheet.flatten([
             styles.ageText,
             { color }
-          ]}>
-          {item} anos
+          ])}>
+          {numericItem} anos
         </Animated.Text>
       </Animated.View>
     );
@@ -176,17 +182,17 @@ const QuizAgeScreen = ({ navigation }: Props) => {
 
   const progressWidth = progressAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['25%', '50%'],
+    outputRange: ['12%', '25%'],
   });
 
   return (
     <View style={styles.container}>
       {/* Background Icons */}
       <View style={styles.backgroundIconsContainer} pointerEvents="none">
-        <MaterialIcons name="fitness-center" size={128} color="#000" style={[styles.bgIcon, { top: 80, left: 40, transform: [{ rotate: '12deg' }] }]} />
-        <MaterialIcons name="favorite-border" size={96} color="#000" style={[styles.bgIcon, { top: '50%', right: -20, transform: [{ rotate: '-12deg' }] }]} />
-        <MaterialIcons name="bolt" size={120} color="#000" style={[styles.bgIcon, { bottom: 40, left: 40, transform: [{ rotate: '12deg' }] }]} />
-        <MaterialIcons name="monitor-weight" size={100} color="#000" style={[styles.bgIcon, { top: '25%', right: '25%', transform: [{ rotate: '12deg' }] }]} />
+        <MaterialIcons name="fitness-center" size={128} color="#000" style={StyleSheet.flatten([styles.bgIcon, { top: 80, left: 40, transform: [{ rotate: '12deg' }] }])} />
+        <MaterialIcons name="favorite-border" size={96} color="#000" style={StyleSheet.flatten([styles.bgIcon, { top: '50%', right: -20, transform: [{ rotate: '-12deg' }] }])} />
+        <MaterialIcons name="bolt" size={120} color="#000" style={StyleSheet.flatten([styles.bgIcon, { bottom: 40, left: 40, transform: [{ rotate: '12deg' }] }])} />
+        <MaterialIcons name="monitor-weight" size={100} color="#000" style={StyleSheet.flatten([styles.bgIcon, { top: '25%', right: '25%', transform: [{ rotate: '12deg' }] }])} />
       </View>
 
       <SafeAreaView style={styles.safeArea}>
@@ -200,7 +206,7 @@ const QuizAgeScreen = ({ navigation }: Props) => {
             
             {/* Progress Bar: w-2/3 filled */}
             <View style={styles.progressBarContainer}>
-              <Animated.View style={[styles.progressBarFill, { width: progressWidth }]} /> 
+              <Animated.View style={StyleSheet.flatten([styles.progressBarFill, { width: progressWidth }])} /> 
             </View>
           </View>
 
@@ -235,7 +241,7 @@ const QuizAgeScreen = ({ navigation }: Props) => {
                 ref={flatListRef}
                 data={AGES}
                 renderItem={renderItem}
-                keyExtractor={(item) => item.toString()}
+                keyExtractor={(item: any) => item.toString()}
                 showsVerticalScrollIndicator={false}
                 snapToInterval={ITEM_HEIGHT}
                 decelerationRate="fast"
@@ -261,7 +267,10 @@ const QuizAgeScreen = ({ navigation }: Props) => {
 
           {/* Footer */}
           <View style={styles.footer}>
-            <Pressable style={styles.continueButton} onPress={handleNext}>
+            <Pressable style={({ pressed }) => StyleSheet.flatten([
+                styles.continueButton,
+                pressed && { transform: [{ scale: 0.98 }] }
+            ])} onPress={handleNext}>
               <Text style={styles.continueButtonText}>Próximo</Text>
             </Pressable>
           </View>

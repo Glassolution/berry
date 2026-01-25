@@ -4,13 +4,43 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { useQuiz } from '../context/QuizContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'QuizGoalScreen'>;
 
-type GoalOption = 'lose_weight' | 'maintain_weight' | 'gain_muscle';
+// Activity Levels
+type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
 
-const { width } = Dimensions.get('window');
+interface ActivityOption {
+  id: ActivityLevel;
+  label: string;
+  description: string;
+}
+
+const ACTIVITY_OPTIONS: ActivityOption[] = [
+  {
+    id: 'sedentary',
+    label: 'Sedentário',
+    description: 'Pouco ou nenhum exercício',
+  },
+  {
+    id: 'light',
+    label: 'Leve',
+    description: 'Exercício leve 1-3 dias/semana',
+  },
+  {
+    id: 'moderate',
+    label: 'Moderado',
+    description: 'Exercício moderado 3-5 dias/semana',
+  },
+  {
+    id: 'active',
+    label: 'Intenso',
+    description: 'Exercício pesado 6-7 dias/semana',
+  },
+];
 
 // Colors
 const COLORS = {
@@ -25,11 +55,13 @@ const COLORS = {
   white: '#FFFFFF',
 };
 
-const QuizGoalScreen = ({ navigation }: Props) => {
-  const [selectedGoal, setSelectedGoal] = useState<GoalOption>('lose_weight');
+const QuizGoalScreen = () => {
+  const router = useRouter();
+  const { updateQuizData } = useQuiz();
+  const [selectedActivity, setSelectedActivity] = useState<ActivityLevel>('light');
 
   const handleBack = () => {
-    navigation.goBack();
+    router.back();
   };
 
   const handleNext = () => {
@@ -37,18 +69,26 @@ const QuizGoalScreen = ({ navigation }: Props) => {
     setTimeout(() => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }, 50);
-    console.log('Next pressed, goal:', selectedGoal);
-    navigation.navigate('QuizActivityScreen');
+    console.log('Next pressed, activity:', selectedActivity);
+    updateQuizData({ activityLevel: selectedActivity });
+    router.push('/QuizSocialProofScreen');
+  };
+
+  const handleSelect = (id: ActivityLevel) => {
+    if (selectedActivity !== id) {
+      Haptics.selectionAsync();
+      setSelectedActivity(id);
+    }
   };
 
   return (
     <View style={styles.container}>
       {/* Background Icons */}
       <View style={styles.backgroundIconsContainer} pointerEvents="none">
-        <MaterialIcons name="fitness-center" size={128} color="#000" style={[styles.bgIcon, { top: 80, left: 40, transform: [{ rotate: '12deg' }] }]} />
-        <MaterialIcons name="favorite-border" size={96} color="#000" style={[styles.bgIcon, { top: '25%', right: -20, transform: [{ rotate: '-12deg' }] }]} />
-        <MaterialIcons name="timer" size={128} color="#000" style={[styles.bgIcon, { bottom: '25%', left: -10, transform: [{ rotate: '45deg' }] }]} />
-        <MaterialIcons name="bolt" size={120} color="#000" style={[styles.bgIcon, { bottom: 40, right: 40, transform: [{ rotate: '-12deg' }] }]} />
+        <MaterialIcons name="fitness-center" size={128} color="#000" style={StyleSheet.flatten([styles.bgIcon, { top: 80, left: 40, transform: [{ rotate: '12deg' }] }])} />
+        <MaterialIcons name="favorite" size={96} color="#000" style={StyleSheet.flatten([styles.bgIcon, { top: '25%', right: -20, transform: [{ rotate: '-12deg' }] }])} />
+        <MaterialIcons name="timer" size={128} color="#000" style={StyleSheet.flatten([styles.bgIcon, { bottom: '25%', left: -10, transform: [{ rotate: '45deg' }] }])} />
+        <MaterialIcons name="bolt" size={120} color="#000" style={StyleSheet.flatten([styles.bgIcon, { bottom: 40, right: 40, transform: [{ rotate: '-12deg' }] }])} />
       </View>
 
       <SafeAreaView style={styles.safeArea}>
@@ -61,49 +101,48 @@ const QuizGoalScreen = ({ navigation }: Props) => {
             </Pressable>
             
             <View style={styles.progressBarContainer}>
-              <View style={styles.progressBarFill} />
+              <View style={[styles.progressBarFill, { width: '75%' }]} />
             </View>
           </View>
 
           {/* Main Content */}
           <View style={styles.mainContent}>
             <View style={styles.titleSection}>
-              <Text style={styles.title}>Qual é o seu objetivo?</Text>
-              <Text style={styles.subtitle}>Escolha a meta que melhor descreve o que você busca.</Text>
+              <Text style={styles.title}>Qual o seu nível de atividade?</Text>
+              <Text style={styles.subtitle}>
+                Isso ajuda a IA a calcular sua queima calórica diária com precisão.
+              </Text>
             </View>
 
             <View style={styles.optionsContainer}>
-              
-              <GoalOptionCard 
-                label="Perder peso" 
-                value="lose_weight" 
-                selected={selectedGoal === 'lose_weight'} 
-                onSelect={() => {
-                  setSelectedGoal('lose_weight');
-                  Haptics.selectionAsync();
-                }} 
-              />
-
-              <GoalOptionCard 
-                label="Manter peso" 
-                value="maintain_weight" 
-                selected={selectedGoal === 'maintain_weight'} 
-                onSelect={() => {
-                  setSelectedGoal('maintain_weight');
-                  Haptics.selectionAsync();
-                }} 
-              />
-
-              <GoalOptionCard 
-                label="Ganhar massa muscular" 
-                value="gain_muscle" 
-                selected={selectedGoal === 'gain_muscle'} 
-                onSelect={() => {
-                  setSelectedGoal('gain_muscle');
-                  Haptics.selectionAsync();
-                }} 
-              />
-
+              {ACTIVITY_OPTIONS.map((option) => {
+                const isSelected = selectedActivity === option.id;
+                return (
+                  <Pressable
+                    key={option.id}
+                    style={StyleSheet.flatten([
+                      styles.optionCard,
+                      isSelected && styles.optionCardSelected
+                    ])}
+                    onPress={() => handleSelect(option.id)}
+                  >
+                    <View style={styles.optionHeader}>
+                      <Text style={styles.optionLabel}>
+                        {option.label}
+                      </Text>
+                      <View style={StyleSheet.flatten([
+                        styles.radioButton,
+                        isSelected && styles.radioButtonSelected
+                      ])}>
+                        {isSelected && <View style={styles.radioButtonInner} />}
+                      </View>
+                    </View>
+                    <Text style={styles.optionDescription}>
+                      {option.description}
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
 
@@ -123,19 +162,29 @@ const QuizGoalScreen = ({ navigation }: Props) => {
 
 const GoalOptionCard = ({ label, value, selected, onSelect }: { label: string, value: string, selected: boolean, onSelect: () => void }) => (
   <Pressable 
-    style={[
+    style={StyleSheet.flatten([
       styles.optionCard, 
       selected && styles.optionCardSelected
-    ]}
+    ])}
     onPress={onSelect}
   >
-    <Text style={styles.optionText}>{label}</Text>
-    <View style={[
-      styles.radioButton,
-      selected && styles.radioButtonSelected
-    ]}>
-      {selected && <View style={styles.radioButtonInner} />}
+    <View style={styles.optionHeader}>
+      <Text style={StyleSheet.flatten([
+          styles.optionLabel, 
+          selected && styles.optionLabelSelected
+      ])}>
+          {label}
+      </Text>
+      <View style={StyleSheet.flatten([
+        styles.radioButton,
+        selected && styles.radioButtonSelected
+      ])}>
+        {selected && <View style={styles.radioButtonInner} />}
+      </View>
     </View>
+    <Text style={styles.optionDescription}>
+        Selecione esta opção se for sua prioridade.
+    </Text>
   </Pressable>
 );
 
@@ -159,22 +208,22 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 12,
+    paddingTop: 10,
     paddingBottom: 32,
   },
   headerBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 40,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    marginRight: 16,
     backgroundColor: COLORS.slate100,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    width: 40,
+    height: 40,
   },
   progressBarContainer: {
     flex: 1,
@@ -184,7 +233,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressBarFill: {
-    width: '40%', // Updated progress
+    width: '100%', // Updated progress to 100%
     height: '100%',
     backgroundColor: COLORS.primary,
     borderRadius: 999,
@@ -193,59 +242,93 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   titleSection: {
-    marginBottom: 40,
+    marginBottom: 32,
   },
   title: {
-    fontSize: 30,
-    fontWeight: '700',
+    fontSize: 30, // text-3xl
+    fontWeight: 'bold',
     color: COLORS.slate900,
-    marginBottom: 12,
-    letterSpacing: -0.5,
+    marginBottom: 12, // mb-3
+    letterSpacing: -0.5, // tracking-tight
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 18, // text-lg
     color: COLORS.slate500,
-    lineHeight: 28,
+    lineHeight: 28, // leading-relaxed
+  },
+  sectionHeaderContainer: {
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  sectionHeader: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLORS.slate900,
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    fontFamily: 'serif',
+    textAlign: 'center',
+  },
+  sectionSubHeader: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLORS.slate900,
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    fontFamily: 'serif',
+    textAlign: 'center',
+    marginTop: 8,
   },
   optionsContainer: {
-    gap: 16,
+    gap: 12,
   },
   optionCard: {
-    width: '100%',
-    padding: 24,
+    backgroundColor: COLORS.cardLight,
     borderRadius: 16,
     borderWidth: 2,
     borderColor: COLORS.slate100,
-    backgroundColor: COLORS.cardLight,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    padding: 20,
+    flexDirection: 'column',
   },
   optionCardSelected: {
     borderColor: COLORS.primary,
+    borderWidth: 2,
   },
-  optionText: {
-    fontSize: 20,
-    fontWeight: '500',
+  optionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  optionLabel: {
+    fontSize: 18, // text-lg
+    fontWeight: 'bold', // font-bold
     color: COLORS.slate800,
   },
+  optionLabelSelected: {
+    // color: COLORS.primary, // The html doesn't change text color on select, only border/ring
+  },
+  optionDescription: {
+    fontSize: 14, // text-sm
+    color: COLORS.slate500,
+    marginTop: 4, // mt-1
+  },
   radioButton: {
-    width: 24,
-    height: 24,
+    width: 24, // w-6
+    height: 24, // h-6
     borderRadius: 12,
     borderWidth: 2,
     borderColor: COLORS.slate200,
-    alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'transparent',
+    alignItems: 'center',
   },
   radioButtonSelected: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
+    borderWidth: 0,
   },
   radioButtonInner: {
-    width: 10,
-    height: 10,
+    width: 10, // w-2.5
+    height: 10, // h-2.5
     borderRadius: 5,
     backgroundColor: COLORS.white,
   },
@@ -259,14 +342,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 18,
-    borderRadius: 999,
-    shadowColor: '#000',
+    borderRadius: 16, // rounded-xl default in theme
+    shadowColor: COLORS.primary,
     shadowOffset: {
       width: 0,
       height: 4,
     },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
     elevation: 4,
   },
   continueButtonText: {

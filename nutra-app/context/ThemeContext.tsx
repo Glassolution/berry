@@ -13,16 +13,16 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: 'dark',
+  theme: 'light',
   setTheme: () => {},
   fruit: 'pear',
   setFruit: () => {},
-  colors: getThemeColors('dark', 'pear'),
+  colors: getThemeColors('light', 'pear'),
 });
 
 export function AppThemeProvider({ children }: { children: React.ReactNode }) {
   const systemColorScheme = useNativeColorScheme();
-  const [theme, setTheme] = useState<Theme>('dark');
+  const [theme, setTheme] = useState<Theme>('light');
   const [fruit, setFruit] = useState<FruitTheme>('pear');
 
   const colors = getThemeColors(theme, fruit);

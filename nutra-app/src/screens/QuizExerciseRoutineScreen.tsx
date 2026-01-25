@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, Animated, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -7,7 +7,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'QuizActivityScreen'>;
+type Props = NativeStackScreenProps<RootStackParamList, 'QuizExerciseRoutineScreen'>;
 
 // Activity Levels
 type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
@@ -39,14 +39,9 @@ const ACTIVITY_OPTIONS: ActivityOption[] = [
     label: 'Intenso',
     description: 'Exercício pesado 6-7 dias/semana',
   },
-  {
-    id: 'very_active',
-    label: 'Muito Intenso',
-    description: 'Exercício muito pesado e trabalho físico',
-  },
 ];
 
-// Colors
+// Colors from existing palette
 const COLORS = {
   primary: '#000000',
   backgroundLight: '#FFFFFF',
@@ -54,17 +49,38 @@ const COLORS = {
   slate100: '#F1F5F9',
   slate200: '#E2E8F0',
   slate300: '#CBD5E1',
-  slate400: '#94A3B8',
   slate500: '#64748B',
   slate800: '#1E293B',
   slate900: '#0F172A',
   white: '#FFFFFF',
 };
 
-const QuizActivityScreen = () => {
+const QuizExerciseRoutineScreen = () => {
   const router = useRouter();
   const [selectedActivity, setSelectedActivity] = useState<ActivityLevel>('light');
   const progressAnim = useRef(new Animated.Value(0)).current;
+
+  // Animate Progress Bar
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: 1,
+      duration: 1000,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, []);
+
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['75%', '100%'], // Ends here
+  });
+
+  const handleSelect = (id: ActivityLevel) => {
+    if (selectedActivity !== id) {
+      Haptics.selectionAsync();
+      setSelectedActivity(id);
+    }
+  };
 
   const handleBack = () => {
     router.back();
@@ -76,34 +92,8 @@ const QuizActivityScreen = () => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }, 50);
     console.log('Next pressed, activity:', selectedActivity);
-    router.push('/QuizSocialProofScreen');
+    router.push('/QuizAnalysisScreen');
   };
-
-  const handleSelect = (id: ActivityLevel) => {
-    if (selectedActivity !== id) {
-      Haptics.selectionAsync();
-      setSelectedActivity(id);
-    }
-  };
-
-  // Animate progress bar
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      Animated.timing(progressAnim, {
-        toValue: 1,
-        duration: 1200,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: false,
-      }).start();
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  const progressWidth = progressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['62%', '75%'],
-  });
 
   return (
     <View style={styles.container}>
@@ -124,14 +114,17 @@ const QuizActivityScreen = () => {
               <MaterialIcons name="arrow-back" size={20} color={COLORS.slate900} />
             </Pressable>
             
-            {/* Progress Bar */}
             <View style={styles.progressBarContainer}>
-              <Animated.View style={StyleSheet.flatten([styles.progressBarFill, { width: progressWidth }])} /> 
+              <Animated.View style={[styles.progressBarFill, { width: progressWidth }]} />
             </View>
           </View>
 
           {/* Main Content */}
-          <View style={styles.mainContent}>
+          <ScrollView 
+            style={styles.mainContent} 
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
             <View style={styles.titleSection}>
               <Text style={styles.title}>Qual o seu nível de atividade?</Text>
               <Text style={styles.subtitle}>
@@ -139,11 +132,7 @@ const QuizActivityScreen = () => {
               </Text>
             </View>
 
-            {/* Options List */}
-            <ScrollView 
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.optionsList}
-            >
+            <View style={styles.optionsContainer}>
               {ACTIVITY_OPTIONS.map((option) => {
                 const isSelected = selectedActivity === option.id;
                 return (
@@ -172,17 +161,19 @@ const QuizActivityScreen = () => {
                   </Pressable>
                 );
               })}
-            </ScrollView>
-          </View>
+            </View>
+          </ScrollView>
 
-          {/* Footer */}
+          {/* Footer Action Button */}
           <View style={styles.footer}>
-            <Pressable style={styles.continueButton} onPress={handleNext}>
+            <Pressable 
+              style={styles.continueButton} 
+              onPress={handleNext}
+            >
               <Text style={styles.continueButtonText}>Continuar</Text>
               <MaterialIcons name="arrow-forward" size={24} color={COLORS.white} />
             </Pressable>
           </View>
-
         </View>
       </SafeAreaView>
     </View>
@@ -209,21 +200,22 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 10,
+    paddingTop: 12,
+    paddingBottom: 32,
   },
   headerBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 32,
   },
   backButton: {
-    marginRight: 16,
-    backgroundColor: COLORS.slate100,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
     width: 40,
     height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.slate100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
   },
   progressBarContainer: {
     flex: 1,
@@ -240,23 +232,26 @@ const styles = StyleSheet.create({
   mainContent: {
     flex: 1,
   },
+  scrollContent: {
+    paddingBottom: 20,
+  },
   titleSection: {
     marginBottom: 32,
   },
   title: {
-    fontSize: 30, // text-3xl
+    fontSize: 28, // text-3xl approx
     fontWeight: 'bold',
     color: COLORS.slate900,
-    marginBottom: 12, // mb-3
-    letterSpacing: -0.5, // tracking-tight
+    marginBottom: 12,
+    lineHeight: 34,
   },
   subtitle: {
     fontSize: 18, // text-lg
     color: COLORS.slate500,
-    lineHeight: 28, // leading-relaxed
+    lineHeight: 28,
   },
-  optionsList: {
-    paddingBottom: 20,
+  optionsContainer: {
+    gap: 12,
   },
   optionCard: {
     backgroundColor: COLORS.cardLight,
@@ -264,13 +259,11 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: COLORS.slate100,
     padding: 20, // p-5
-    marginBottom: 12,
     flexDirection: 'column',
   },
   optionCardSelected: {
     borderColor: COLORS.primary,
     borderWidth: 2,
-    // ring-1 ring-primary handled by border width usually in RN or shadow
   },
   optionHeader: {
     flexDirection: 'row',
@@ -308,30 +301,27 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
   },
   footer: {
-    paddingVertical: 20,
+    marginTop: 24,
   },
   continueButton: {
-    backgroundColor: COLORS.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
+    backgroundColor: COLORS.primary,
+    paddingVertical: 18,
     borderRadius: 16,
     shadowColor: COLORS.primary,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 10,
+    elevation: 8,
   },
   continueButtonText: {
     color: COLORS.white,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     marginRight: 8,
   },
 });
 
-export default QuizActivityScreen;
+export default QuizExerciseRoutineScreen;

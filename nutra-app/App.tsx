@@ -12,6 +12,10 @@ import QuizActivityScreen from './src/screens/QuizActivityScreen';
 import QuizSocialProofScreen from './src/screens/QuizSocialProofScreen';
 import QuizGoalScreen from './src/screens/QuizGoalScreen';
 import QuizGoalWeightScreen from './src/screens/QuizGoalWeightScreen';
+import QuizExerciseRoutineScreen from './src/screens/QuizExerciseRoutineScreen';
+import QuizAnalysisScreen from './src/screens/QuizAnalysisScreen';
+import QuizMeasurementsScreen from './src/screens/QuizMeasurementsScreen';
+import QuizCameraScreen from './src/screens/QuizCameraScreen';
 
 export type RootStackParamList = {
   WelcomeScreen: undefined;
@@ -22,14 +26,21 @@ export type RootStackParamList = {
   QuizActivityScreen: undefined;
   QuizSocialProofScreen: undefined;
   QuizGoalWeightScreen: undefined;
+  QuizExerciseRoutineScreen: undefined;
+  QuizAnalysisScreen: undefined;
+  QuizMeasurementsScreen: undefined;
+  QuizCameraScreen: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+import { QuizProvider } from './src/context/QuizContext';
+
 const App = () => {
   return (
-    <SafeAreaProvider>
-      <NavigationContainer>
+    <QuizProvider>
+      <SafeAreaProvider>
+        <NavigationContainer>
         <Stack.Navigator
           initialRouteName="WelcomeScreen"
           screenListeners={{
@@ -50,10 +61,15 @@ const App = () => {
           <Stack.Screen name="QuizActivityScreen" component={QuizActivityScreen} />
         <Stack.Screen name="QuizSocialProofScreen" component={QuizSocialProofScreen} />
         <Stack.Screen name="QuizGoalWeightScreen" component={QuizGoalWeightScreen} />
+        <Stack.Screen name="QuizExerciseRoutineScreen" component={QuizExerciseRoutineScreen} />
+        <Stack.Screen name="QuizAnalysisScreen" component={QuizAnalysisScreen} />
+        <Stack.Screen name="QuizMeasurementsScreen" component={QuizMeasurementsScreen} />
+        <Stack.Screen name="QuizCameraScreen" component={QuizCameraScreen} />
           <Stack.Screen name="DashboardScreen" component={DashboardScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
+    </QuizProvider>
   );
 };
 

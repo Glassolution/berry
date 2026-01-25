@@ -110,7 +110,7 @@ export default function ProgressScreen() {
           <View style={styles.grid}>
             {/* Row 1 */}
             <View style={styles.row}>
-              <View style={[styles.field, { flex: 1 }]}>
+              <View style={StyleSheet.flatten([styles.field, { flex: 1 }])}>
                 <ThemedText style={styles.label}>Idade</ThemedText>
                 <TextInput
                   style={StyleSheet.flatten([styles.input, { backgroundColor: isDark ? '#1f2937' : '#f3f4f6', color: colors.text, borderColor: colors.border }])}
@@ -120,7 +120,7 @@ export default function ProgressScreen() {
                   placeholderTextColor={colors.icon}
                 />
               </View>
-              <View style={[styles.field, { flex: 1 }]}>
+              <View style={StyleSheet.flatten([styles.field, { flex: 1 }])}>
                 <ThemedText style={styles.label}>Peso (kg)</ThemedText>
                 <TextInput
                   style={StyleSheet.flatten([styles.input, { backgroundColor: isDark ? '#1f2937' : '#f3f4f6', color: colors.text, borderColor: colors.border }])}
@@ -134,7 +134,7 @@ export default function ProgressScreen() {
 
             {/* Row 2 */}
             <View style={styles.row}>
-              <View style={[styles.field, { flex: 1 }]}>
+              <View style={StyleSheet.flatten([styles.field, { flex: 1 }])}>
                 <ThemedText style={styles.label}>Meta de peso (kg)</ThemedText>
                 <TextInput
                   style={StyleSheet.flatten([styles.input, { backgroundColor: isDark ? '#1f2937' : '#f3f4f6', color: colors.text, borderColor: colors.border }])}
@@ -144,7 +144,7 @@ export default function ProgressScreen() {
                   placeholderTextColor={colors.icon}
                 />
               </View>
-              <View style={[styles.field, { flex: 1 }]}>
+              <View style={StyleSheet.flatten([styles.field, { flex: 1 }])}>
                 <ThemedText style={styles.label}>Altura (cm)</ThemedText>
                 <TextInput
                   style={StyleSheet.flatten([styles.input, { backgroundColor: isDark ? '#1f2937' : '#f3f4f6', color: colors.text, borderColor: colors.border }])}
@@ -274,7 +274,7 @@ export default function ProgressScreen() {
 
           {/* Input Fields (Secondary) */}
           <View style={styles.row}>
-            <View style={[styles.field, { flex: 1 }]}>
+            <View style={StyleSheet.flatten([styles.field, { flex: 1 }])}>
               <ThemedText style={styles.label}>Data</ThemedText>
               <TextInput
                 style={StyleSheet.flatten([styles.input, { backgroundColor: isDark ? '#1f2937' : '#f3f4f6', color: colors.text, borderColor: colors.border }])}
@@ -283,7 +283,7 @@ export default function ProgressScreen() {
                 placeholderTextColor={colors.icon}
               />
             </View>
-            <View style={[styles.field, { flex: 1 }]}>
+            <View style={StyleSheet.flatten([styles.field, { flex: 1 }])}>
               <ThemedText style={styles.label}>Peso (kg)</ThemedText>
               <TextInput
                 style={StyleSheet.flatten([styles.input, { backgroundColor: isDark ? '#1f2937' : '#f3f4f6', color: colors.text, borderColor: colors.border }])}

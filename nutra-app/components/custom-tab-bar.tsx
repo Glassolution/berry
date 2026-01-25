@@ -1,16 +1,25 @@
 import React from 'react';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Pressable, StyleSheet, View, Platform } from 'react-native';
-import { IconSymbol } from '@/components/ui/icon-symbol';
+import { Pressable, StyleSheet, View, Platform, Text } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/context/ThemeContext';
 import { BlurView } from 'expo-blur';
 
 export default function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const activeIndex = state.index;
-  const { theme, colors } = useTheme();
+  const { theme } = useTheme();
   const isDark = theme === 'dark';
+
+  const colors = {
+    background: isDark ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+    border: isDark ? '#27272a' : '#f3f4f6',
+    active: isDark ? '#FFFFFF' : '#000000',
+    inactive: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)',
+    fabBg: isDark ? '#FFFFFF' : '#000000',
+    fabIcon: isDark ? '#000000' : '#FFFFFF',
+    ring: isDark ? '#000000' : '#FFFFFF',
+  };
 
   const go = (name: string) => {
     const route = state.routes.find((r) => r.name === name);
@@ -37,39 +46,54 @@ export default function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     }
   };
 
+  const TabItem = ({ name, icon, label }: { name: string; icon: any; label: string }) => {
+    const focused = isFocused(name);
+    return (
+      <Pressable style={styles.item} onPress={() => go(name)}>
+        <MaterialIcons 
+          size={24} 
+          color={focused ? colors.active : colors.inactive} 
+          name={icon} 
+        />
+        <Text style={[
+          styles.label, 
+          { color: focused ? colors.active : colors.inactive }
+        ]}>
+          {label}
+        </Text>
+      </Pressable>
+    );
+  };
+
   return (
     <View style={styles.wrapper}>
       <BlurView 
         intensity={80} 
         tint={isDark ? 'dark' : 'light'} 
-        style={StyleSheet.flatten([styles.bar, { borderTopColor: colors.border }])}
+        style={StyleSheet.flatten([styles.bar, { borderTopColor: colors.border, backgroundColor: colors.background }])}
       >
-        <Pressable style={styles.item} onPress={() => go('index')}>
-          <IconSymbol size={24} color={isFocused('index') ? colors.primary : colors.mutedForeground} name={'square.grid.2x2' as any} />
-          <ThemedText style={StyleSheet.flatten([styles.label, { color: isFocused('index') ? colors.primary : colors.mutedForeground }])}>Dashboard</ThemedText>
-        </Pressable>
-        <Pressable style={styles.item} onPress={() => go('meals')}>
-          <IconSymbol size={24} color={isFocused('meals') ? colors.primary : colors.mutedForeground} name={'fork.knife' as any} />
-          <ThemedText style={StyleSheet.flatten([styles.label, { color: isFocused('meals') ? colors.primary : colors.mutedForeground }])}>Refeições</ThemedText>
-        </Pressable>
+        <TabItem name="index" icon="grid-view" label="INÍCIO" />
+        <TabItem name="progress" icon="bar-chart" label="STATUS" />
 
+        {/* Central Button Space */}
         <View style={styles.centerSpace} />
 
-        <Pressable style={styles.item} onPress={() => go('recipes')}>
-          <IconSymbol size={24} color={isFocused('recipes') ? colors.primary : colors.mutedForeground} name={'book' as any} />
-          <ThemedText style={StyleSheet.flatten([styles.label, { color: isFocused('recipes') ? colors.primary : colors.mutedForeground }])}>Receitas</ThemedText>
-        </Pressable>
-        <Pressable style={styles.item} onPress={() => go('progress')}>
-          <IconSymbol size={24} color={isFocused('progress') ? colors.primary : colors.mutedForeground} name={'chart.bar.fill' as any} />
-          <ThemedText style={StyleSheet.flatten([styles.label, { color: isFocused('progress') ? colors.primary : colors.mutedForeground }])}>Progresso</ThemedText>
-        </Pressable>
+        {/* Using 'recipes' as placeholder for Social and 'meals' for Profile since we don't have those routes yet, 
+            or we can just use existing routes but label them differently to match design */}
+        <TabItem name="recipes" icon="group" label="SOCIAL" />
+        <TabItem name="meals" icon="person" label="PERFIL" />
       </BlurView>
 
       <Pressable 
-        style={StyleSheet.flatten([styles.fab, { backgroundColor: colors.primary, shadowColor: colors.primary }])} 
+        style={StyleSheet.flatten([
+          styles.fab, 
+          { 
+            backgroundColor: colors.fabBg, 
+          }
+        ])} 
         onPress={onScanPress}
       >
-        <IconSymbol size={28} color={colors.primaryForeground} name={'plus' as any} />
+        <MaterialIcons size={32} color={colors.fabIcon} name="add" />
       </Pressable>
     </View>
   );
@@ -87,36 +111,40 @@ const styles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    justifyContent: 'space-between',
+    paddingHorizontal: 32,
+    paddingVertical: 12,
     borderTopWidth: 1,
     width: '100%',
-    height: 64,
+    height: 90,
+    paddingBottom: 24, 
   },
   item: {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
   },
+  label: {
+    fontSize: 9,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
   centerSpace: {
-    width: 56,
+    width: 64,
   },
   fab: {
     position: 'absolute',
-    top: -28,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    top: -28, // Moved up to overlap
+    width: 64,
+    height: 64,
+    borderRadius: 24, // Squared rounded
     alignItems: 'center',
     justifyContent: 'center',
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
     elevation: 8,
-  },
-  label: {
-    fontSize: 10,
-    fontWeight: '500',
   },
 });

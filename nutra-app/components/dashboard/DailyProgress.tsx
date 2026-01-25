@@ -1,7 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
-import { BlurView } from 'expo-blur';
 import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/context/ThemeContext';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -61,8 +60,7 @@ export function DailyProgress() {
   const fat = { current: 0, target: 70 };
 
   return (
-    <View style={styles.container}>
-      <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+    <View style={StyleSheet.flatten([styles.container, { backgroundColor: isDark ? '#161616' : '#F8F8F8', borderColor: isDark ? '#27272a' : '#f3f4f6' }])}>
       <View style={styles.content}>
         
         {/* Header */}
@@ -73,7 +71,7 @@ export function DailyProgress() {
               {calories.target - calories.current} kcal restantes
             </ThemedText>
           </View>
-          <View style={[styles.flameBadge, { backgroundColor: colors.calories.replace('hsl', 'hsla').replace(')', ', 0.2)') }]}>
+          <View style={StyleSheet.flatten([styles.flameBadge, { backgroundColor: colors.calories.replace('hsl', 'hsla').replace(')', ', 0.2)') }])}>
              <IconSymbol name="flame" size={16} color={colors.calories} />
              <ThemedText style={{ color: colors.calories, fontWeight: 'bold' }}>0</ThemedText>
           </View>
@@ -137,7 +135,7 @@ export function DailyProgress() {
         </View>
 
         {/* Footer Stats */}
-        <View style={[styles.footer, { borderTopColor: colors.border }]}>
+        <View style={StyleSheet.flatten([styles.footer, { borderTopColor: colors.border }])}>
           <View style={styles.footerRow}>
             <ThemedText style={{ fontWeight: '600' }}>Proteína</ThemedText>
             <ThemedText style={{ color: colors.protein }}>{protein.current}g</ThemedText>

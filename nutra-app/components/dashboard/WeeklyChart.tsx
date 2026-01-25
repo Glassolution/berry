@@ -1,6 +1,5 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/context/ThemeContext';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -10,8 +9,7 @@ export function WeeklyChart() {
   const isDark = theme === 'dark';
 
   return (
-    <View style={styles.container}>
-      <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+    <View style={StyleSheet.flatten([styles.container, { backgroundColor: isDark ? '#161616' : '#F8F8F8', borderColor: isDark ? '#27272a' : '#f3f4f6' }])}>
       <View style={styles.content}>
         
         {/* Header */}
@@ -19,11 +17,11 @@ export function WeeklyChart() {
           <ThemedText type="subtitle">Semana</ThemedText>
           <View style={styles.legend}>
              <View style={styles.legendItem}>
-               <View style={[styles.dot, { backgroundColor: colors.calories }]} />
+               <View style={StyleSheet.flatten([styles.dot, { backgroundColor: colors.calories }])} />
                <ThemedText style={{ fontSize: 10, color: colors.mutedForeground }}>Dia: 3.102 kcal</ThemedText>
              </View>
              <View style={styles.legendItem}>
-               <View style={[styles.dot, { backgroundColor: colors.calories }]} />
+               <View style={StyleSheet.flatten([styles.dot, { backgroundColor: colors.calories }])} />
                <ThemedText style={{ fontSize: 10, color: colors.mutedForeground }}>Semana: 21.714 kcal</ThemedText>
              </View>
           </View>
@@ -33,20 +31,20 @@ export function WeeklyChart() {
         <View style={styles.chartArea}>
            {/* Dashed Target Line */}
            <View style={styles.targetLineContainer}>
-             <ThemedText style={[styles.targetLabel, { color: colors.calories }]}>3.200</ThemedText>
-             <View style={[styles.dashedLine, { borderColor: colors.calories }]} />
+             <ThemedText style={StyleSheet.flatten([styles.targetLabel, { color: colors.calories }])}>3.200</ThemedText>
+             <View style={StyleSheet.flatten([styles.dashedLine, { borderColor: colors.calories }])} />
            </View>
 
            {/* Middle Label */}
            <View style={styles.midLabelContainer}>
               <ThemedText style={styles.targetLabel}>1.500</ThemedText>
-              <View style={[styles.gridLine, { backgroundColor: colors.border }]} />
+              <View style={StyleSheet.flatten([styles.gridLine, { backgroundColor: colors.border }])} />
            </View>
            
            {/* Bottom Label */}
            <View style={styles.bottomLabelContainer}>
               <ThemedText style={styles.targetLabel}>0</ThemedText>
-              <View style={[styles.gridLine, { backgroundColor: colors.border }]} />
+              <View style={StyleSheet.flatten([styles.gridLine, { backgroundColor: colors.border }])} />
            </View>
 
            {/* X Axis Labels */}
@@ -58,7 +56,7 @@ export function WeeklyChart() {
         </View>
 
         {/* Summary Stats */}
-        <View style={[styles.summary, { borderTopColor: colors.border }]}>
+        <View style={StyleSheet.flatten([styles.summary, { borderTopColor: colors.border }])}>
           <View style={styles.statItem}>
             <ThemedText type="defaultSemiBold">0</ThemedText>
             <ThemedText style={styles.statLabel}>Dias ativos</ThemedText>

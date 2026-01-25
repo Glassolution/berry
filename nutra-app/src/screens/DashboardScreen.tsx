@@ -8,6 +8,12 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Link } from 'expo-router';
 import FloatingNav from '@/components/floating-nav';
 
+const colors = {
+  muted: '#f3f4f6',
+  primary: '#22C55E',
+  calories: '#16A34A',
+};
+
 export default function DashboardScreen() {
   return (
     <>
@@ -75,7 +81,7 @@ export default function DashboardScreen() {
           { key: 'drink', label: 'Drink', color: '#14b8a6' },
         ].map((c) => (
           <View key={c.key} style={styles.catItem}>
-            <View style={[styles.catIcon, { backgroundColor: `${c.color}20` }]}>
+            <View style={StyleSheet.flatten([styles.catIcon, { backgroundColor: `${c.color}20` }])}>
               <IconSymbol name={c.key as any} size={22} color={c.color} />
             </View>
             <ThemedText style={styles.catLabel}>{c.label}</ThemedText>

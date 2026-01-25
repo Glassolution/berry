@@ -51,11 +51,11 @@ export default function ParallaxScrollView({
       scrollEventThrottle={16}>
       {headerImage && headerBackgroundColor ? (
         <Animated.View
-          style={[
+          style={StyleSheet.flatten([
             styles.header,
             { backgroundColor: headerBackgroundColor[theme] },
             headerAnimatedStyle,
-          ]}>
+          ])}>
           {headerImage}
         </Animated.View>
       ) : null}

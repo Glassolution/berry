@@ -4,7 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { useQuiz } from '../context/QuizContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'QuizGoalWeightScreen'>;
 
@@ -83,7 +85,7 @@ const RulerItem = React.memo(({ item, index, scrollX }: { item: number, index: n
   return (
     <View style={{ width: ITEM_WIDTH, alignItems: 'center', justifyContent: 'flex-end', height: 80 }}>
       {isMajor && (
-           <Animated.Text style={[styles.rulerText, { opacity: textOpacity }]}>
+           <Animated.Text style={StyleSheet.flatten([styles.rulerText, { opacity: textOpacity }])}>
                {item}
            </Animated.Text>
       )}
@@ -124,7 +126,9 @@ const RulerItem = React.memo(({ item, index, scrollX }: { item: number, index: n
   );
 });
 
-const QuizGoalWeightScreen = ({ navigation }: Props) => {
+const QuizGoalWeightScreen = () => {
+  const router = useRouter();
+  const { quizData, updateQuizData } = useQuiz();
   const [unit, setUnit] = useState<'kg' | 'lbs'>('kg');
   // We keep selectedWeight state for the final submission, but UI updates via ref
   const [selectedWeight, setSelectedWeight] = useState(70);
@@ -144,8 +148,16 @@ const QuizGoalWeightScreen = ({ navigation }: Props) => {
   // Ref for the text input to update directly without re-renders
   const weightTextRef = useRef<TextInput>(null);
 
+  // Initialize from context if available
+  useEffect(() => {
+    if (quizData.unitSystem === 'imperial') {
+        setUnit('lbs');
+        // Default goal logic could be refined
+    }
+  }, []);
+
   const handleBack = () => {
-    navigation.goBack();
+    router.back();
   };
 
   const handleNext = () => {
@@ -154,7 +166,16 @@ const QuizGoalWeightScreen = ({ navigation }: Props) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }, 50);
     console.log('Next pressed, goal weight:', currentWeightRef.current, unit);
-    // navigation.navigate('NextScreen'); 
+    
+    // Save to context
+    let finalGoalWeight = currentWeightRef.current;
+    if (unit === 'lbs') {
+      finalGoalWeight = Math.round(currentWeightRef.current / 2.20462);
+    }
+    updateQuizData({ goalWeight: finalGoalWeight });
+
+    // Navigate to QuizAnalysisScreen instead of QuizGoalScreen to avoid loop
+    router.push('/QuizAnalysisScreen'); 
   };
 
   // Initial scroll and animation
@@ -270,7 +291,7 @@ const QuizGoalWeightScreen = ({ navigation }: Props) => {
 
   const progressWidth = progressAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0%', '20%'], // Start low to mimic "beginning"
+    outputRange: ['75%', '90%'], // Start from previous screen's progress
   });
 
   return (
@@ -305,16 +326,16 @@ const QuizGoalWeightScreen = ({ navigation }: Props) => {
                 {/* Unit Toggle */}
                 <View style={styles.toggleContainer}>
                     <Pressable 
-                        style={[styles.toggleButton, unit === 'lbs' && styles.toggleButtonActive]}
+                        style={StyleSheet.flatten([styles.toggleButton, unit === 'lbs' && styles.toggleButtonActive])}
                         onPress={() => toggleUnit('lbs')}
                     >
-                        <Text style={[styles.toggleText, unit === 'lbs' && styles.toggleTextActive]}>lbs</Text>
+                        <Text style={StyleSheet.flatten([styles.toggleText, unit === 'lbs' && styles.toggleTextActive])}>lbs</Text>
                     </Pressable>
                     <Pressable 
-                        style={[styles.toggleButton, unit === 'kg' && styles.toggleButtonActive]}
+                        style={StyleSheet.flatten([styles.toggleButton, unit === 'kg' && styles.toggleButtonActive])}
                         onPress={() => toggleUnit('kg')}
                     >
-                        <Text style={[styles.toggleText, unit === 'kg' && styles.toggleTextActive]}>kg</Text>
+                        <Text style={StyleSheet.flatten([styles.toggleText, unit === 'kg' && styles.toggleTextActive])}>kg</Text>
                     </Pressable>
                 </View>
 
@@ -381,10 +402,10 @@ const QuizGoalWeightScreen = ({ navigation }: Props) => {
             {/* Footer */}
             <View style={styles.footer}>
                 <Pressable 
-                    style={({ pressed }) => [
+                    style={({ pressed }) => StyleSheet.flatten([
                         styles.continueButton,
                         pressed && { transform: [{ scale: 0.98 }] }
-                    ]}
+                    ])}
                     onPress={handleNext}
                 >
                     <Text style={styles.continueButtonText}>Próximo</Text>

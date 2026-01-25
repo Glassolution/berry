@@ -1,6 +1,5 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/context/ThemeContext';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -10,10 +9,9 @@ export function EmptyMealsPlaceholder() {
   const isDark = theme === 'dark';
 
   return (
-    <View style={styles.container}>
-      <BlurView intensity={20} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+    <View style={StyleSheet.flatten([styles.container, { backgroundColor: isDark ? '#161616' : '#F8F8F8', borderColor: isDark ? '#27272a' : '#f3f4f6' }])}>
       <View style={styles.content}>
-        <View style={[styles.iconContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+        <View style={StyleSheet.flatten([styles.iconContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }])}>
            <IconSymbol name="fork.knife" size={32} color={colors.mutedForeground} />
         </View>
         <ThemedText type="defaultSemiBold" style={{ marginTop: 16 }}>Nenhuma refeição ainda</ThemedText>

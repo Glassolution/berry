@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, TextInput, Pressable, ScrollView, View, Modal, TouchableOpacity } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -11,6 +11,7 @@ import { FruitTheme } from '@/constants/Colors';
 type TabType = 'account' | 'security' | 'appearance';
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('account');
   const { theme, setTheme, fruit, setFruit, colors } = useTheme();
   const isDark = theme === 'dark';
@@ -35,7 +36,7 @@ export default function SettingsScreen() {
     { value: 'banana', label: 'Banana (Amarelo)', emoji: '🍌' },
     { value: 'orange', label: 'Laranja (Laranja)', emoji: '🍊' },
     { value: 'grape', label: 'Uva (Roxo)', emoji: '🍇' },
-    { value: 'strawberry', label: 'Padrão (Branco)', emoji: ' ' },
+    { value: 'strawberry', label: 'Padrão (Branco)', emoji: '🍓' },
   ];
 
   const selectedFruit = fruitOptions.find(f => f.value === fruit) || fruitOptions[0];
@@ -117,7 +118,7 @@ export default function SettingsScreen() {
           <View style={styles.inputGroup}>
             <ThemedText type="caption" style={{ marginBottom: 8 }}>Telefone</ThemedText>
             <TextInput 
-              style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]} 
+              style={StyleSheet.flatten([styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }])} 
               value={phone} 
               onChangeText={setPhone}
               placeholderTextColor={colors.icon}
@@ -126,22 +127,32 @@ export default function SettingsScreen() {
 
           <View style={styles.inputGroup}>
             <ThemedText type="caption" style={{ marginBottom: 8 }}>País</ThemedText>
-            <View style={[styles.selectInput, { backgroundColor: colors.background, borderColor: colors.border }]}>
-              <ThemedText style={[styles.selectValue, { color: colors.text }]}>Brasil</ThemedText>
+            <View style={StyleSheet.flatten([styles.selectInput, { backgroundColor: colors.background, borderColor: colors.border }])}>
+              <ThemedText style={StyleSheet.flatten([styles.selectValue, { color: colors.text }])}>Brasil</ThemedText>
               <IconSymbol name="chevron.down" size={20} color={colors.icon} />
             </View>
           </View>
 
-          <Pressable style={[styles.saveButton, { backgroundColor: colors.primary }]}>
+          <Pressable style={StyleSheet.flatten([styles.saveButton, { backgroundColor: colors.primary }])}>
             <ThemedText style={{ color: colors.primaryForeground, fontWeight: 'bold', fontSize: 16 }}>Alterar Senha</ThemedText>
           </Pressable>
         </View>
       </View>
 
       {/* Actions */}
-      <Pressable style={[styles.logoutButton, { borderColor: colors.border }]}>
-        <ThemedText style={[styles.logoutText, { color: colors.text }]}>Sair da conta</ThemedText>
-      </Pressable>
+      <View style={styles.section}>
+        <ThemedText type="subtitle" style={styles.sectionTitle}>Conta</ThemedText>
+        <Pressable 
+          style={StyleSheet.flatten([styles.logoutButton, { borderColor: colors.border }])}
+          onPress={() => {
+            router.dismissAll();
+            router.replace('/welcome');
+          }}
+        >
+          <IconSymbol name="rectangle.portrait.and.arrow.right" size={20} color={colors.text} />
+          <ThemedText style={StyleSheet.flatten([styles.logoutText, { color: colors.text }])}>Sair da Conta</ThemedText>
+        </Pressable>
+      </View>
 
       <Pressable style={styles.deleteButton}>
         <IconSymbol name="trash" size={16} color="#ef4444" />
@@ -157,14 +168,14 @@ export default function SettingsScreen() {
         <View style={styles.sectionContent}>
           <View style={styles.sectionHeaderRow}>
             <IconSymbol name="shield" size={20} color={colors.primary} />
-            <ThemedText style={[styles.sectionTitleWithIcon, { color: colors.text }]}>Alterar Senha</ThemedText>
+            <ThemedText style={StyleSheet.flatten([styles.sectionTitleWithIcon, { color: colors.text }])}>Alterar Senha</ThemedText>
           </View>
 
           <View style={styles.inputGroup}>
             <ThemedText type="caption" style={{ marginBottom: 8 }}>Senha atual</ThemedText>
-            <View style={[styles.passwordContainer, { backgroundColor: colors.background, borderColor: colors.border }]}>
+            <View style={StyleSheet.flatten([styles.passwordContainer, { backgroundColor: colors.background, borderColor: colors.border }])}>
               <TextInput 
-                style={[styles.passwordInput, { color: colors.text }]} 
+                style={StyleSheet.flatten([styles.passwordInput, { color: colors.text }])} 
                 value={currentPassword} 
                 onChangeText={setCurrentPassword}
                 placeholder="Digite sua senha atual"
@@ -179,9 +190,9 @@ export default function SettingsScreen() {
 
           <View style={styles.inputGroup}>
             <ThemedText type="caption" style={{ marginBottom: 8 }}>Nova senha</ThemedText>
-            <View style={[styles.passwordContainer, { backgroundColor: colors.background, borderColor: colors.border }]}>
+            <View style={StyleSheet.flatten([styles.passwordContainer, { backgroundColor: colors.background, borderColor: colors.border }])}>
               <TextInput 
-                style={[styles.passwordInput, { color: colors.text }]} 
+                style={StyleSheet.flatten([styles.passwordInput, { color: colors.text }])} 
                 value={newPassword} 
                 onChangeText={setNewPassword}
                 placeholder="Digite a nova senha"
@@ -197,9 +208,9 @@ export default function SettingsScreen() {
 
           <View style={styles.inputGroup}>
             <ThemedText type="caption" style={{ marginBottom: 8 }}>Confirmar nova senha</ThemedText>
-            <View style={[styles.passwordContainer, { backgroundColor: colors.background, borderColor: colors.border }]}>
+            <View style={StyleSheet.flatten([styles.passwordContainer, { backgroundColor: colors.background, borderColor: colors.border }])}>
               <TextInput 
-                style={[styles.passwordInput, { color: colors.text }]} 
+                style={StyleSheet.flatten([styles.passwordInput, { color: colors.text }])} 
                 value={confirmPassword} 
                 onChangeText={setConfirmPassword}
                 placeholder="Confirme a nova senha"
@@ -212,7 +223,7 @@ export default function SettingsScreen() {
             </View>
           </View>
 
-          <Pressable style={[styles.saveButton, { backgroundColor: colors.primary }]}>
+          <Pressable style={StyleSheet.flatten([styles.saveButton, { backgroundColor: colors.primary }])}>
             <ThemedText style={{ color: colors.primaryForeground, fontWeight: 'bold', fontSize: 16 }}>Alterar Senha</ThemedText>
           </Pressable>
         </View>
@@ -227,34 +238,34 @@ export default function SettingsScreen() {
         <View style={styles.sectionContent}>
           <View style={styles.sectionHeaderRow}>
             <IconSymbol name="paintpalette" size={20} color={colors.primary} />
-            <ThemedText style={[styles.sectionTitleWithIcon, { color: colors.text }]}>Aparência</ThemedText>
+            <ThemedText style={StyleSheet.flatten([styles.sectionTitleWithIcon, { color: colors.text }])}>Aparência</ThemedText>
           </View>
-          <ThemedText style={[styles.sectionSubtitle, { color: colors.text, opacity: 0.7 }]}>Personalize como o aplicativo se parece para você.</ThemedText>
+          <ThemedText style={StyleSheet.flatten([styles.sectionSubtitle, { color: colors.text, opacity: 0.7 }])}>Personalize como o aplicativo se parece para você.</ThemedText>
 
           <ThemedText type="caption" style={{ marginBottom: 8 }}>Modo</ThemedText>
           <View style={styles.modeRow}>
             <Pressable 
-              style={[styles.modeButton, { backgroundColor: colors.background, borderColor: colors.border }, theme === 'light' && { borderColor: colors.primary }]} 
+              style={StyleSheet.flatten([styles.modeButton, { backgroundColor: colors.background, borderColor: colors.border }, theme === 'light' && { borderColor: colors.primary }])} 
               onPress={() => setTheme('light')}
             >
               <IconSymbol name="sun.max" size={24} color={theme === 'light' ? colors.primary : colors.text} />
-              <ThemedText style={[styles.modeText, { color: colors.text }]}>Claro</ThemedText>
+              <ThemedText style={StyleSheet.flatten([styles.modeText, { color: colors.text }])}>Claro</ThemedText>
             </Pressable>
             <Pressable 
-              style={[styles.modeButton, { backgroundColor: colors.background, borderColor: colors.border }, theme === 'dark' && { borderColor: colors.primary }]} 
+              style={StyleSheet.flatten([styles.modeButton, { backgroundColor: colors.background, borderColor: colors.border }, theme === 'dark' && { borderColor: colors.primary }])} 
               onPress={() => setTheme('dark')}
             >
               <IconSymbol name="moon" size={24} color={theme === 'dark' ? colors.primary : colors.text} />
-              <ThemedText style={[styles.modeText, { color: colors.text }]}>Escuro</ThemedText>
+              <ThemedText style={StyleSheet.flatten([styles.modeText, { color: colors.text }])}>Escuro</ThemedText>
             </Pressable>
           </View>
 
-          <View style={[styles.inputGroup, { marginTop: 20 }]}>
+          <View style={StyleSheet.flatten([styles.inputGroup, { marginTop: 20 }])}>
             <ThemedText type="caption" style={{ marginBottom: 8 }}>Tema</ThemedText>
             
             {/* Theme Dropdown Trigger */}
             <Pressable 
-              style={[styles.dropdownTrigger, { backgroundColor: colors.background, borderColor: colors.border }]}
+              style={StyleSheet.flatten([styles.dropdownTrigger, { backgroundColor: colors.background, borderColor: colors.border }])}
               onPress={() => setThemeDropdownVisible(true)}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -275,14 +286,14 @@ export default function SettingsScreen() {
                 style={styles.modalOverlay} 
                 onPress={() => setThemeDropdownVisible(false)}
               >
-                <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={StyleSheet.flatten([styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }])}>
                   {fruitOptions.map((item) => (
                     <TouchableOpacity
                       key={item.value}
-                      style={[
+                      style={StyleSheet.flatten([
                         styles.dropdownItem,
                         fruit === item.value && { backgroundColor: colors.primary }
-                      ]}
+                      ])}
                       onPress={() => {
                         setFruit(item.value);
                         setThemeDropdownVisible(false);
@@ -293,10 +304,10 @@ export default function SettingsScreen() {
                           <IconSymbol name="checkmark" size={16} color="#fff" />
                         )}
                         <ThemedText style={{ fontSize: 16 }}>{item.emoji}</ThemedText>
-                        <ThemedText style={[
+                        <ThemedText style={StyleSheet.flatten([
                           styles.dropdownItemText, 
                           { color: fruit === item.value ? '#fff' : colors.text }
-                        ]}>
+                        ])}>
                           {item.label}
                         </ThemedText>
                       </View>
@@ -312,7 +323,10 @@ export default function SettingsScreen() {
   );
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView 
+      style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])}
+      contentContainerStyle={{ paddingBottom: 40 }}
+    >
       <Stack.Screen 
         options={{ 
           title: 'Configurações',
@@ -322,12 +336,12 @@ export default function SettingsScreen() {
         }} 
       />
       {renderTabs()}
-      <ScrollView style={styles.scrollView}>
+      <View style={styles.scrollView}>
         {activeTab === 'account' && renderAccountTab()}
         {activeTab === 'security' && renderSecurityTab()}
         {activeTab === 'appearance' && renderAppearanceTab()}
-      </ScrollView>
-    </ThemedView>
+      </View>
+    </ScrollView>
   );
 }
 
@@ -516,24 +530,19 @@ const styles = StyleSheet.create({
   },
   dropdownMenu: {
     width: '100%',
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: 'hidden',
+    borderRadius: 12,
     padding: 8,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    borderWidth: 1,
+    maxHeight: 400,
   },
   dropdownItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
     borderRadius: 8,
-    marginBottom: 4,
   },
   dropdownItemText: {
     fontSize: 16,
-    fontWeight: '500',
   },
 });

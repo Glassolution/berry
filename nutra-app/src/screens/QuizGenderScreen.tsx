@@ -4,7 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { useQuiz } from '../context/QuizContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'QuizGenderScreen'>;
 
@@ -26,11 +28,13 @@ const COLORS = {
   white: '#FFFFFF',
 };
 
-const QuizGenderScreen = ({ navigation }: Props) => {
+const QuizGenderScreen = () => {
+  const router = useRouter();
+  const { updateQuizData } = useQuiz();
   const [selectedGender, setSelectedGender] = useState<GenderOption>('mulher');
 
   const handleBack = () => {
-    navigation.goBack();
+    router.back();
   };
 
   const handleNext = () => {
@@ -39,7 +43,8 @@ const QuizGenderScreen = ({ navigation }: Props) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }, 50);
     console.log('Next pressed, gender:', selectedGender);
-    navigation.navigate('QuizAgeScreen');
+    updateQuizData({ gender: selectedGender });
+    router.push('/QuizAgeScreen');
   };
 
   return (
@@ -47,16 +52,16 @@ const QuizGenderScreen = ({ navigation }: Props) => {
       {/* Background Icons - Positioned to match HTML */}
       <View style={styles.backgroundIconsContainer} pointerEvents="none">
         {/* top-20 left-10 rotate-12 */}
-        <MaterialIcons name="fitness-center" size={128} color="#000" style={[styles.bgIcon, { top: 80, left: 40, transform: [{ rotate: '12deg' }] }]} />
+        <MaterialIcons name="fitness-center" size={128} color="#000" style={StyleSheet.flatten([styles.bgIcon, { top: 80, left: 40, transform: [{ rotate: '12deg' }] }])} />
         
         {/* top-1/4 right-[-20px] -rotate-12 */}
-        <MaterialIcons name="favorite-border" size={96} color="#000" style={[styles.bgIcon, { top: '25%', right: -20, transform: [{ rotate: '-12deg' }] }]} />
+        <MaterialIcons name="favorite-border" size={96} color="#000" style={StyleSheet.flatten([styles.bgIcon, { top: '25%', right: -20, transform: [{ rotate: '-12deg' }] }])} />
         
         {/* bottom-1/4 left-[-10px] rotate-45 */}
-        <MaterialIcons name="timer" size={128} color="#000" style={[styles.bgIcon, { bottom: '25%', left: -10, transform: [{ rotate: '45deg' }] }]} />
+        <MaterialIcons name="timer" size={128} color="#000" style={StyleSheet.flatten([styles.bgIcon, { bottom: '25%', left: -10, transform: [{ rotate: '45deg' }] }])} />
         
         {/* bottom-10 right-10 -rotate-12 */}
-        <MaterialIcons name="bolt" size={120} color="#000" style={[styles.bgIcon, { bottom: 40, right: 40, transform: [{ rotate: '-12deg' }] }]} />
+        <MaterialIcons name="bolt" size={120} color="#000" style={StyleSheet.flatten([styles.bgIcon, { bottom: 40, right: 40, transform: [{ rotate: '-12deg' }] }])} />
       </View>
 
       <SafeAreaView style={styles.safeArea}>
@@ -135,17 +140,17 @@ const QuizGenderScreen = ({ navigation }: Props) => {
 // Helper component for options to reduce repetition
 const GenderOptionCard = ({ label, value, selected, onSelect }: { label: string, value: string, selected: boolean, onSelect: () => void }) => (
   <Pressable 
-    style={[
+    style={StyleSheet.flatten([
       styles.optionCard, 
       selected && styles.optionCardSelected
-    ]}
+    ])}
     onPress={onSelect}
   >
     <Text style={styles.optionText}>{label}</Text>
-    <View style={[
+    <View style={StyleSheet.flatten([
       styles.radioButton,
       selected && styles.radioButtonSelected
-    ]}>
+    ])}>
       {selected && <View style={styles.radioButtonInner} />}
     </View>
   </Pressable>
@@ -196,7 +201,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressBarFill: {
-    width: '25%', // w-1/4
+    width: '12%', // w-1/8
     height: '100%',
     backgroundColor: COLORS.primary,
     borderRadius: 999,
@@ -225,30 +230,30 @@ const styles = StyleSheet.create({
   optionCard: {
     width: '100%',
     padding: 24, // p-6
-    borderRadius: 16, // rounded-2xl
-    borderWidth: 2,
+    borderRadius: 32, // rounded-[32px] matching dashboard
+    borderWidth: 1, // border-1 for unselected
     borderColor: COLORS.slate100,
-    backgroundColor: COLORS.cardLight,
+    backgroundColor: COLORS.white, // clean white bg
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   optionCardSelected: {
     borderColor: COLORS.primary, // peer-checked:border-primary
-    // HTML has ring-1 ring-primary, which visually reinforces the border.
-    // In RN, we can just stick to the border color change as it's cleaner.
+    borderWidth: 2, // Thicker border for selected
+    backgroundColor: COLORS.cardLight, // Subtle highlight
   },
   optionText: {
-    fontSize: 20, // text-xl
-    fontWeight: '500', // font-medium
-    color: COLORS.slate800,
+    fontSize: 18, // Slightly refined
+    fontWeight: '600', // font-semibold
+    color: COLORS.slate900, // darker text
   },
   radioButton: {
     width: 24, // w-6
     height: 24, // h-6
     borderRadius: 12, // rounded-full
-    borderWidth: 2,
-    borderColor: COLORS.slate200,
+    borderWidth: 1.5,
+    borderColor: COLORS.slate300,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',

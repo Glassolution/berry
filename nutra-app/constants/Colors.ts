@@ -2,12 +2,14 @@
 const tintColorLight = '#0a7ea4';
 const tintColorDark = '#fff';
 
-export type FruitTheme = 'pear' | 'banana' | 'apple' | 'grape' | 'orange';
+export type FruitTheme = 'pear' | 'banana' | 'apple' | 'grape' | 'orange' | 'strawberry';
 
 const baseColors = {
   light: {
     background: 'hsl(0, 0%, 100%)',
     foreground: 'hsl(220, 20%, 6%)',
+    text: 'hsl(220, 20%, 6%)', // Added text
+    icon: 'hsl(220, 20%, 6%)', // Added icon
     card: 'hsl(0, 0%, 100%)',
     cardForeground: 'hsl(220, 20%, 6%)',
     popover: 'hsl(0, 0%, 100%)',
@@ -30,6 +32,7 @@ const baseColors = {
     background: 'hsl(220, 20%, 6%)',
     foreground: 'hsl(0, 0%, 98%)',
     text: 'hsl(0, 0%, 98%)',
+    icon: 'hsl(0, 0%, 98%)', // Added icon
     card: 'hsl(220, 18%, 10%)',
     cardForeground: 'hsl(0, 0%, 98%)',
     popover: 'hsl(220, 18%, 10%)',
