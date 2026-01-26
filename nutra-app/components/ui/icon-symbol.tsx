@@ -3,7 +3,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { SymbolWeight, SymbolViewProps } from 'expo-symbols';
 import { ComponentProps } from 'react';
-import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
+import { OpaqueColorValue, type StyleProp, type TextStyle, StyleSheet } from 'react-native';
 
 type IconMapping = Record<SymbolViewProps['name'], ComponentProps<typeof MaterialIcons>['name']>;
 type IconSymbolName = keyof typeof MAPPING;
@@ -18,6 +18,35 @@ const MAPPING = {
   'paperplane.fill': 'send',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
+  'calendar': 'calendar-today',
+  'chart.bar.fill': 'bar-chart',
+  'fork.knife': 'restaurant',
+  'magnifyingglass': 'search',
+  'sparkles': 'auto-awesome',
+  'bell.fill': 'notifications',
+  'person.circle': 'person',
+  'leaf': 'spa',
+  'bowl': 'rice-bowl',
+  'dumbbell': 'fitness-center',
+  'snack': 'emoji-food-beverage',
+  'drink': 'local-drink',
+  'square.grid.2x2': 'grid-view',
+  'book': 'menu-book',
+  'plus': 'add',
+  'person': 'person',
+  'shield': 'security',
+  'paintpalette': 'palette',
+  'camera': 'camera-alt',
+  'eye': 'visibility',
+  'eye.slash': 'visibility-off',
+  'sun.max': 'wb-sunny',
+  'moon': 'nightlight-round',
+  'trash': 'delete',
+  'logout': 'logout',
+  'chevron.down': 'keyboard-arrow-down',
+  'xmark': 'close',
+  'flame': 'local-fire-department',
+  'clock': 'schedule',
 } as IconMapping;
 
 /**
@@ -37,5 +66,5 @@ export function IconSymbol({
   style?: StyleProp<TextStyle>;
   weight?: SymbolWeight;
 }) {
-  return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
+  return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={StyleSheet.flatten(style)} />;
 }
