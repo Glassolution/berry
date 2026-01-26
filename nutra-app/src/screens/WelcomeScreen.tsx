@@ -21,8 +21,8 @@ const WelcomeScreen = ({ navigation }: Props) => {
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.title}>Seu assistente nutricional inteligente</Text>
-        <Text style={styles.subtitle}>
+        <Text selectable style={styles.title}>Seu assistente nutricional inteligente</Text>
+        <Text selectable style={styles.subtitle}>
           Descubra o que há em cada alimento e construa uma rotina mais saudável
           com o NutriScan.
         </Text>

@@ -19,6 +19,7 @@ export function ThemedText({
 
   return (
     <Text
+      selectable={true}
       style={[
         { color },
         type === 'default' ? styles.default : undefined,

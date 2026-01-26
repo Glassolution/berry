@@ -1,0 +1,3 @@
+Um prato é considerado rico em proteína quando possui mais de 20g de proteína.
+Um prato é considerado calórico quando ultrapassa 600 calorias.
+Um prato equilibrado possui carboidratos, proteínas e alguma fonte de gordura.

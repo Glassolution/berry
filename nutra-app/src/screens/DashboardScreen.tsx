@@ -5,11 +5,11 @@ const DashboardScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Dashboard</Text>
+        <Text selectable style={styles.title}>Dashboard</Text>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>NutriScan</Text>
-          <Text style={styles.cardDescription}>
+          <Text selectable style={styles.cardTitle}>NutriScan</Text>
+          <Text selectable style={styles.cardDescription}>
             Analise seus alimentos de forma inteligente
           </Text>
 
