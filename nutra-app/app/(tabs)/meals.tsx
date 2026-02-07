@@ -6,9 +6,11 @@ import { useTheme } from '@/context/ThemeContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Svg, { Circle } from 'react-native-svg';
+import { useAuth } from '@/src/context/AuthContext';
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { signOut } = useAuth();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const [isDarkMode, setIsDarkMode] = useState(isDark);
@@ -279,7 +281,13 @@ export default function ProfileScreen() {
         </View>
 
         {/* Logout */}
-        <Pressable style={styles.logoutButton} onPress={() => router.replace('/welcome')}>
+        <Pressable
+          style={styles.logoutButton}
+          onPress={async () => {
+            await signOut();
+            router.replace('/login');
+          }}
+        >
           <MaterialIcons name="logout" size={20} color={colors.textSecondary} />
           <ThemedText style={StyleSheet.flatten([styles.logoutText, { color: colors.textSecondary }])}>Sair da conta</ThemedText>
         </Pressable>

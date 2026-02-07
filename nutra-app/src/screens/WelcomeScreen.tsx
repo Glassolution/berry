@@ -10,6 +10,7 @@ import MaskedView from '@react-native-masked-view/masked-view';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { useRouter } from 'expo-router';
+import { useQuiz } from '../context/QuizContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'WelcomeScreen'>;
 
@@ -17,8 +18,10 @@ const { width, height } = Dimensions.get('window');
 
 const WelcomeScreen = () => {
   const router = useRouter();
+  const { resetQuiz } = useQuiz();
 
   const handleStart = () => {
+    resetQuiz();
     router.push('/QuizGenderScreen');
   };
 
@@ -68,8 +71,8 @@ const WelcomeScreen = () => {
                 Sua nutrição inteligente{' '}
                 <View style={styles.inlineBadge}>
                   <Text selectable style={styles.highlightText}>com IA</Text>
-                  <MaterialIcons name="auto-awesome" size={28} color="#000000" />
-                </View>
+                <MaterialIcons name="auto-awesome" size={28} color="#E11D48" />
+              </View>
               </Text>
               <Text selectable style={styles.subtitle}>
                 Treinos e dietas personalizados para o seu corpo e objetivos.
@@ -87,7 +90,7 @@ const WelcomeScreen = () => {
             {/* Footer */}
             <View style={styles.footer}>
               <Text style={styles.footerText}>Já tem uma conta? </Text>
-              <Pressable onPress={handleStart}>
+              <Pressable onPress={() => router.push('/login')}>
                 <Text style={styles.footerLink}>Login</Text>
               </Pressable>
             </View>
@@ -174,7 +177,7 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: '800',
     fontStyle: 'italic',
-    color: '#000000',
+    color: '#E11D48',
   },
   subtitle: {
     fontSize: 18,
@@ -189,10 +192,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#000000',
+    backgroundColor: '#E11D48',
     borderRadius: 999,
     paddingVertical: 20,
-    shadowColor: '#000',
+    shadowColor: '#E11D48',
     shadowOffset: {
       width: 0,
       height: 4,

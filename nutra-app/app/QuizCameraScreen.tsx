@@ -73,7 +73,7 @@ const QuizCameraScreen = () => {
         <View style={styles.bottomContent}>
             <Text style={styles.subtitle}>A CÂMERA RECONHECE SUA COMIDA</Text>
             <Text style={styles.title}>
-                Tire uma foto —{'\n'}é mágico!
+                Tire uma foto{'\n'}é mágico!
             </Text>
 
             <View style={styles.shutterContainer}>
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#fff', // Or slightly off-white if needed
+    backgroundColor: '#E11D48', // Or slightly off-white if needed
   },
   homeIndicatorContainer: {
     position: 'absolute',

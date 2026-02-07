@@ -1,15 +1,29 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Svg, { Circle, Line, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
+import { useQuiz } from '../context/QuizContext';
+import { calculateDietPlan } from '../utils/nutritionCalculations';
 
 const { width } = Dimensions.get('window');
 
 const QuizPlanReadyScreen = () => {
   const router = useRouter();
+  const { quizData } = useQuiz();
+
+  const dietPlan = useMemo(() => {
+    return calculateDietPlan(
+      quizData.gender,
+      quizData.age,
+      quizData.height,
+      quizData.weight,
+      quizData.goalWeight,
+      quizData.activityLevel
+    );
+  }, [quizData]);
 
   const handleBack = () => {
     router.back();
@@ -17,7 +31,7 @@ const QuizPlanReadyScreen = () => {
 
   const handleContinue = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push('/QuizSaveProgressScreen');
+    router.push('/QuizDietPlanScreen');
   };
 
   const handlePersonalize = () => {
@@ -39,26 +53,26 @@ const QuizPlanReadyScreen = () => {
         {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={handleBack} style={styles.backButton}>
-            <MaterialIcons name="arrow-back-ios" size={20} color="#000" style={{ marginLeft: 6 }} />
+            <MaterialIcons name="arrow-back-ios" size={20} color="#ee2b5b" style={{ marginLeft: 6 }} />
           </Pressable>
           
           <View style={styles.progressBadge}>
             <View style={styles.progressRing}>
                <Svg width={64} height={64} viewBox="0 0 64 64">
                  <Circle cx="32" cy="32" r="30" stroke="rgba(0,0,0,0.05)" strokeWidth="2" fill="none" />
-                 <Circle cx="32" cy="32" r="30" stroke="#000" strokeWidth="2" fill="none" strokeDasharray={`${2 * Math.PI * 30}`} />
+                 <Circle cx="32" cy="32" r="30" stroke="#ee2b5b" strokeWidth="2" fill="none" strokeDasharray={`${2 * Math.PI * 30}`} />
                </Svg>
             </View>
             <View style={styles.progressContent}>
               <Text style={styles.progressText}>100%</Text>
-              <MaterialIcons name="check-circle" size={16} color="#000" />
+              <MaterialIcons name="check-circle" size={16} color="#ee2b5b" />
             </View>
           </View>
           
           <View style={{ width: 40 }} /> 
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.mainContent}>
           {/* Title Section */}
           <View style={styles.titleContainer}>
             <Text style={styles.titleMain}>
@@ -71,7 +85,7 @@ const QuizPlanReadyScreen = () => {
           <View style={styles.goalContainer}>
             <Text style={styles.goalLabel}>META DE PESO</Text>
             <View style={styles.goalValueContainer}>
-              <Text style={styles.goalValue}>70</Text>
+              <Text style={styles.goalValue}>{quizData.goalWeight}</Text>
               <Text style={styles.goalUnit}>kg</Text>
             </View>
           </View>
@@ -101,37 +115,37 @@ const QuizPlanReadyScreen = () => {
             {/* Proteins - Top Left */}
             <View style={[styles.macroCard, styles.macroCardTopLeft]}>
                 <View style={styles.macroHeader}>
-                    <MaterialIcons name="restaurant" size={14} color="#EF4444" />
+                    <MaterialIcons name="restaurant" size={12} color="#EF4444" />
                     <Text style={styles.macroLabel}>PROTEÍNAS</Text>
                 </View>
-                <Text style={styles.macroValue}>140g</Text>
+                <Text style={styles.macroValue}>{dietPlan.macros.protein}g</Text>
             </View>
 
             {/* Carbs - Top Right */}
             <View style={[styles.macroCard, styles.macroCardTopRight]}>
                 <View style={styles.macroHeader}>
-                    <MaterialIcons name="grass" size={14} color="#F59E0B" />
+                    <MaterialIcons name="grass" size={12} color="#F59E0B" />
                     <Text style={styles.macroLabel}>CARBOS</Text>
                 </View>
-                <Text style={styles.macroValue}>200g</Text>
+                <Text style={styles.macroValue}>{dietPlan.macros.carbs}g</Text>
             </View>
 
             {/* Fats - Bottom Left */}
             <View style={[styles.macroCard, styles.macroCardBottomLeft]}>
                 <View style={styles.macroHeader}>
-                    <MaterialIcons name="water-drop" size={14} color="#10B981" />
+                    <MaterialIcons name="water-drop" size={12} color="#10B981" />
                     <Text style={styles.macroLabel}>GORDURAS</Text>
                 </View>
-                <Text style={styles.macroValue}>60g</Text>
+                <Text style={styles.macroValue}>{dietPlan.macros.fats}g</Text>
             </View>
 
             {/* Water - Bottom Right */}
             <View style={[styles.macroCard, styles.macroCardBottomRight]}>
                 <View style={styles.macroHeader}>
-                    <MaterialIcons name="water-drop" size={14} color="#3B82F6" />
+                    <MaterialIcons name="water-drop" size={12} color="#3B82F6" />
                     <Text style={styles.macroLabel}>ÁGUA</Text>
                 </View>
-                <Text style={styles.macroValue}>2.5L</Text>
+                <Text style={styles.macroValue}>{dietPlan.macros.water}L</Text>
             </View>
 
 
@@ -140,7 +154,7 @@ const QuizPlanReadyScreen = () => {
                 <View style={styles.centerCirclePulse} />
                 <View style={styles.centerCirclePulseOuter} />
                 <View style={styles.centerCircle}>
-                    <Text style={styles.caloriesValue}>1.800</Text>
+                    <Text style={styles.caloriesValue}>{dietPlan.calories.toLocaleString('pt-BR')}</Text>
                     <Text style={styles.caloriesLabel}>KCAL</Text>
                     <MaterialIcons name="bolt" size={16} color="rgba(255,255,255,0.4)" style={{ marginTop: 4 }} />
                 </View>
@@ -149,9 +163,11 @@ const QuizPlanReadyScreen = () => {
 
           {/* Personalize Link */}
           <Pressable onPress={handlePersonalize} style={styles.personalizeLink}>
-            <MaterialIcons name="edit" size={16} color="#A1A1AA" />
+            <MaterialIcons name="edit" size={14} color="#A1A1AA" />
             <Text style={styles.personalizeText}>Personalizar valores</Text>
           </Pressable>
+
+        </View>
 
           {/* Footer Action */}
           <View style={styles.footer}>
@@ -163,8 +179,6 @@ const QuizPlanReadyScreen = () => {
                 <MaterialIcons name="auto-awesome" size={20} color="#fff" />
             </Pressable>
           </View>
-
-        </ScrollView>
       </SafeAreaView>
     </View>
   );
@@ -227,22 +241,23 @@ const styles = StyleSheet.create({
     color: '#000',
     marginBottom: 2,
   },
-  scrollContent: {
+  mainContent: {
+    flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 40,
+    paddingBottom: 10,
     alignItems: 'center',
+    justifyContent: 'space-evenly',
   },
   titleContainer: {
-    marginBottom: 32,
+    marginBottom: 0,
     alignItems: 'center',
   },
   titleMain: {
-    fontSize: 38,
+    fontSize: 30,
     fontWeight: '400', // Try to mimic serif weight
     color: '#000',
     textAlign: 'center',
-    lineHeight: 44,
+    lineHeight: 36,
     // fontFamily: 'serif', // React Native serif fallback
   },
   titleItalic: {
@@ -251,7 +266,7 @@ const styles = StyleSheet.create({
   },
   goalContainer: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 0,
   },
   goalLabel: {
     fontSize: 11,
@@ -259,14 +274,14 @@ const styles = StyleSheet.create({
     color: '#A1A1AA',
     textTransform: 'uppercase',
     letterSpacing: 2,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   goalValueContainer: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
   goalValue: {
-    fontSize: 72,
+    fontSize: 56,
     fontWeight: '900',
     color: '#000',
     letterSpacing: -2,
@@ -278,28 +293,30 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   graphicContainer: {
-    width: width - 24,
-    height: width - 24,
+    width: width * 0.85,
+    height: width * 0.85,
+    maxWidth: 320,
+    maxHeight: 320,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    marginBottom: 20,
+    marginBottom: 0,
   },
   centerCircleWrapper: {
-    width: 180,
-    height: 180,
+    width: 140,
+    height: 140,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
   centerCircle: {
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: '#000',
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: '#ee2b5b',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: "#000",
+    shadowColor: "#ee2b5b",
     shadowOffset: {
       width: 0,
       height: 20,
@@ -326,7 +343,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 1.25 }],
   },
   caloriesValue: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '900',
     color: '#fff',
   },
@@ -399,7 +416,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 12,
     paddingHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: 0,
   },
   personalizeText: {
     fontSize: 14,
@@ -409,12 +426,14 @@ const styles = StyleSheet.create({
 
   footer: {
     width: '100%',
-    marginTop: 10,
+    marginTop: 0,
+    paddingHorizontal: 24,
+    paddingBottom: 24,
   },
   continueButton: {
     width: '100%',
     height: 56,
-    backgroundColor: '#000',
+    backgroundColor: '#ee2b5b',
     borderRadius: 28,
     flexDirection: 'row',
     alignItems: 'center',

@@ -15,7 +15,7 @@ const { width, height } = Dimensions.get('window');
 
 // Colors
 const COLORS = {
-  primary: '#000000',
+  primary: '#E11D48',
   backgroundLight: '#FFFFFF',
   slate100: '#F1F5F9',
   slate200: '#E2E8F0',

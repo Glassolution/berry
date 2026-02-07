@@ -19,7 +19,7 @@ const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
 // Colors based on HTML
 const COLORS = {
-  primary: '#000000',
+  primary: '#E11D48',
   backgroundLight: '#FFFFFF',
   backgroundDark: '#0F172A',
   slate50: '#F8FAFC',

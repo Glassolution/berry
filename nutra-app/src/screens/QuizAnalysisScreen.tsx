@@ -10,11 +10,14 @@ import Svg, { Line, Path, Defs, LinearGradient, Stop, Circle } from 'react-nativ
 import { Image } from 'expo-image';
 import { useQuiz } from '../context/QuizContext';
 
+const AnimatedPath = Animated.createAnimatedComponent(Path);
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
 type Props = NativeStackScreenProps<RootStackParamList, 'QuizAnalysisScreen'>;
 
 // Colors
 const COLORS = {
-  primary: '#000000',
+  primary: '#E11D48',
   backgroundLight: '#FFFFFF',
   cardLight: '#F9FAFB',
   slate100: '#F1F5F9',
@@ -42,6 +45,7 @@ const QuizAnalysisScreen = () => {
   const router = useRouter();
   const { quizData } = useQuiz();
   const progressAnim = useRef(new Animated.Value(0)).current;
+  const chartAnim = useRef(new Animated.Value(0)).current;
 
   const currentWeight = quizData.weight || 80;
   const goalWeight = quizData.goalWeight || 68;
@@ -56,6 +60,14 @@ const QuizAnalysisScreen = () => {
     Animated.timing(progressAnim, {
       toValue: 1,
       duration: 1000,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+
+    // Animate Chart Lines
+    Animated.timing(chartAnim, {
+      toValue: 1,
+      duration: 3000,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start();
@@ -108,7 +120,18 @@ const QuizAnalysisScreen = () => {
 
   const progressWidth = progressAnim.interpolate({
       inputRange: [0, 1],
-      outputRange: ['90%', '100%']
+      outputRange: ['30%', '100%']
+  });
+
+  const PATH_LENGTH = 600;
+  const strokeDashoffset = chartAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [PATH_LENGTH, 0],
+  });
+
+  const circleOpacity = chartAnim.interpolate({
+    inputRange: [0.8, 1],
+    outputRange: [0, 1],
   });
 
   return (
@@ -163,27 +186,31 @@ const QuizAnalysisScreen = () => {
                         <Line x1="0" y1="160" x2="400" y2="160" stroke={COLORS.slate100} strokeDasharray="4 4" strokeWidth="1" />
 
                         {/* Red Curve (Dieta Comum) */}
-                        <Path 
+                        <AnimatedPath 
                             d={commonPath} 
                             fill="none" 
                             stroke={COLORS.red500} 
                             strokeWidth="3" 
                             strokeOpacity="0.4"
                             strokeLinecap="round"
+                            strokeDasharray={PATH_LENGTH}
+                            strokeDashoffset={strokeDashoffset}
                         />
 
                         {/* Berry Curve */}
-                        <Path 
+                        <AnimatedPath 
                             d={berryPath} 
                             fill="none" 
                             stroke="url(#gradient-berry)" 
                             strokeWidth="4" 
                             strokeLinecap="round"
+                            strokeDasharray={PATH_LENGTH}
+                            strokeDashoffset={strokeDashoffset}
                         />
 
                         {/* Points */}
                         <Circle cx="0" cy={startY} r="5" fill="white" stroke="black" strokeWidth="2" />
-                        <Circle cx="400" cy={endY} r="6" fill="white" stroke={COLORS.indigo600} strokeWidth="2" />
+                        <AnimatedCircle cx="400" cy={endY} r="6" fill="white" stroke={COLORS.indigo600} strokeWidth="2" opacity={circleOpacity} />
                     </Svg>
 
                     {/* Labels on Chart */}

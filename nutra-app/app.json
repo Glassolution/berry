@@ -3,7 +3,17 @@
     "name": "Nutra — seu app de nutrição inteligente",
     "slug": "nutra-app",
     "owner": "ceopear",
-    "scheme": "berry"
+    "scheme": "berry",
+    "android": {
+      "package": "com.ceopear.nutraapp",
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
+    },
+    "plugins": [
+      "expo-router"
+    ]
   }
 }
 

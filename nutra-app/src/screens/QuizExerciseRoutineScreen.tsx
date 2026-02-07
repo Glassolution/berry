@@ -43,7 +43,7 @@ const ACTIVITY_OPTIONS: ActivityOption[] = [
 
 // Colors from existing palette
 const COLORS = {
-  primary: '#000000',
+  primary: '#E11D48',
   backgroundLight: '#FFFFFF',
   cardLight: '#F9FAFB',
   slate100: '#F1F5F9',

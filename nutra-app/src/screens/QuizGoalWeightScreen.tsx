@@ -14,7 +14,7 @@ const { width } = Dimensions.get('window');
 
 // Colors
 const COLORS = {
-  primary: '#000000',
+  primary: '#E11D48',
   backgroundLight: '#FFFFFF',
   accentGray: '#F4F4F4',
   infoBg: '#F9F9F9',
@@ -125,6 +125,7 @@ const RulerItem = React.memo(({ item, index, scrollX }: { item: number, index: n
     </View>
   );
 });
+RulerItem.displayName = 'RulerItem';
 
 const QuizGoalWeightScreen = () => {
   const router = useRouter();
@@ -291,7 +292,7 @@ const QuizGoalWeightScreen = () => {
 
   const progressWidth = progressAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['75%', '90%'], // Start from previous screen's progress
+    outputRange: ['25%', '30%'], // Adjusted to start early as per user request
   });
 
   return (

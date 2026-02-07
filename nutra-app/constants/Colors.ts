@@ -8,6 +8,7 @@ const baseColors = {
   light: {
     background: 'hsl(0, 0%, 100%)',
     foreground: 'hsl(220, 20%, 6%)',
+    primary: '#ee2b5b', // Berry Red (Updated)
     text: 'hsl(220, 20%, 6%)', // Added text
     icon: 'hsl(220, 20%, 6%)', // Added icon
     card: 'hsl(0, 0%, 100%)',
@@ -75,8 +76,8 @@ const fruitThemes = {
     dark: { primary: 'hsl(24, 95%, 53%)', primaryForeground: 'hsl(0, 0%, 100%)', accent: 'hsl(24, 95%, 53%)', accentForeground: 'hsl(0, 0%, 100%)', calories: 'hsl(24, 95%, 53%)' },
   },
   strawberry: {
-    light: { primary: 'hsl(0, 0%, 20%)', primaryForeground: 'hsl(0, 0%, 100%)', accent: 'hsl(0, 0%, 20%)', accentForeground: 'hsl(0, 0%, 100%)', calories: 'hsl(0, 0%, 20%)' },
-    dark: { primary: 'hsl(0, 0%, 98%)', primaryForeground: 'hsl(220, 20%, 6%)', accent: 'hsl(0, 0%, 98%)', accentForeground: 'hsl(220, 20%, 6%)', calories: 'hsl(0, 0%, 98%)' },
+    light: { primary: '#ee2b5b', primaryForeground: 'hsl(0, 0%, 100%)', accent: '#ee2b5b', accentForeground: 'hsl(0, 0%, 100%)', calories: '#ee2b5b' },
+    dark: { primary: '#ee2b5b', primaryForeground: 'hsl(220, 20%, 6%)', accent: '#ee2b5b', accentForeground: 'hsl(220, 20%, 6%)', calories: '#ee2b5b' },
   },
 };
 

@@ -11,7 +11,7 @@ export default function AuthCallback() {
 
   useEffect(() => {
     if (user) {
-      router.replace('/WelcomeMemberScreen');
+      router.replace('/(tabs)');
       return;
     }
 
@@ -32,7 +32,7 @@ export default function AuthCallback() {
              console.log(sessionError);
              throw sessionError;
           }
-          router.replace('/WelcomeMemberScreen');
+          router.replace('/(tabs)');
         } else {
           router.replace('/QuizSaveProgressScreen');
         }

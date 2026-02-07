@@ -58,15 +58,16 @@ export default function HomeScreen() {
     return Math.round(bmr * (activityMultipliers[activityLevel] || 1.2));
   };
 
-  const targetCalories = calculateTDEE();
+  const activePlan = (quizData as any).activeDietPlan as any;
+  const targetCalories = typeof activePlan?.calories === 'number' ? activePlan.calories : calculateTDEE();
   // Assume 0 consumed for now
   const consumedCalories = 0; 
   const remainingCalories = targetCalories - consumedCalories;
   
   // Calculate Macros (30% P, 40% C, 30% F)
-  const proteinGrams = Math.round((targetCalories * 0.3) / 4);
-  const carbsGrams = Math.round((targetCalories * 0.4) / 4);
-  const fatGrams = Math.round((targetCalories * 0.3) / 9);
+  const proteinGrams = typeof activePlan?.macros?.protein === 'number' ? activePlan.macros.protein : Math.round((targetCalories * 0.3) / 4);
+  const carbsGrams = typeof activePlan?.macros?.carbs === 'number' ? activePlan.macros.carbs : Math.round((targetCalories * 0.4) / 4);
+  const fatGrams = typeof activePlan?.macros?.fats === 'number' ? activePlan.macros.fats : Math.round((targetCalories * 0.3) / 9);
 
   const colors = {
     background: isDark ? '#0A0A0A' : '#FFFFFF',
@@ -212,6 +213,26 @@ export default function HomeScreen() {
             <ThemedText style={StyleSheet.flatten([styles.macroValue, { color: colors.text }])}>{fatGrams}g</ThemedText>
           </View>
         </ScrollView>
+
+        {/* Minha Dieta */}
+        <View style={styles.sectionContainer}>
+          <Link href="/diet" asChild>
+            <Pressable style={StyleSheet.flatten([styles.dietCard, { backgroundColor: colors.card, borderColor: colors.border }])}>
+              <View style={styles.dietCardLeft}>
+                <View style={StyleSheet.flatten([styles.dietIcon, { backgroundColor: isDark ? '#18181b' : '#ffffff', borderColor: colors.border }])}>
+                  <MaterialIcons name="restaurant-menu" size={22} color={colors.text} />
+                </View>
+                <View style={{ gap: 2 }}>
+                  <ThemedText style={StyleSheet.flatten([styles.dietTitle, { color: colors.text }])}>Minha Dieta</ThemedText>
+                  <ThemedText style={StyleSheet.flatten([styles.dietSubtitle, { color: colors.textSecondary }])}>
+                    {activePlan ? 'Plano ativo pronto' : 'Gerar plano ativo'}
+                  </ThemedText>
+                </View>
+              </View>
+              <MaterialIcons name="chevron-right" size={24} color={colors.textSecondary} />
+            </Pressable>
+          </Link>
+        </View>
 
         {/* Categories */}
         <View style={styles.categoriesSection}>
@@ -380,6 +401,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  sectionContainer: {
+    marginBottom: 40,
+  },
+  dietCard: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  dietCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  dietIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dietTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  dietSubtitle: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
   statsSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -513,9 +567,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textTransform: 'uppercase',
     letterSpacing: 1.5,
-  },
-  sectionContainer: {
-    marginBottom: 40,
   },
   insightCard: {
     padding: 24,

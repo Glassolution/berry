@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
   },
   yesButton: {
     width: '100%',
-    backgroundColor: '#000',
+    backgroundColor: '#E11D48',
     borderRadius: 999,
     paddingVertical: 20,
     alignItems: 'center',

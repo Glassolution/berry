@@ -37,7 +37,7 @@ const QuizSaveProgressScreen = () => {
     if (user) {
       // User successfully logged in (e.g. via Deep Link callback)
       setIsGoogleLoading(false);
-      router.replace('/WelcomeMemberScreen');
+      router.replace('/(tabs)');
     }
   }, [user]);
 
@@ -97,7 +97,7 @@ const QuizSaveProgressScreen = () => {
             <View style={styles.cloudContainer}>
               <MaterialIcons name="cloud" size={160} color="#E5E7EB" />
               <View style={styles.cloudOverlay}>
-                <MaterialIcons name="auto-awesome" size={40} color="#000" />
+                <MaterialIcons name="auto-awesome" size={40} color="#E11D48" />
               </View>
             </View>
           </Animated.View>
@@ -133,6 +133,14 @@ const QuizSaveProgressScreen = () => {
                 <Text style={styles.googleButtonText}>Continuar com Google</Text>
               </>
             )}
+          </Pressable>
+
+          <Pressable 
+            style={({ pressed }) => [styles.emailButton, pressed && styles.buttonPressed]}
+            onPress={() => router.push('/register')}
+          >
+            <MaterialIcons name="mail-outline" size={20} color="#0F172A" />
+            <Text style={styles.emailButtonText}>Continuar com E-mail</Text>
           </Pressable>
 
           <View style={styles.loginContainer}>
@@ -257,6 +265,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  emailButton: {
+    width: '100%',
+    height: 56,
+    backgroundColor: '#fff',
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  emailButtonText: {
+    color: '#0F172A',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   buttonPressed: {
     transform: [{ scale: 0.98 }],
     opacity: 0.9,
@@ -274,7 +299,7 @@ const styles = StyleSheet.create({
   loginLink: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#000',
+    color: '#E11D48',
     textDecorationLine: 'underline',
   },
 });

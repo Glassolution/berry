@@ -13,7 +13,7 @@ const { width } = Dimensions.get('window');
 
 // Colors based on HTML
 const COLORS = {
-  primary: '#000000',
+  primary: '#E11D48',
   backgroundLight: '#FFFFFF',
   backgroundDark: '#121212',
   slate50: '#F8FAFC',
@@ -89,7 +89,7 @@ const QuizSocialProofScreen = () => {
                 {/* Stars Row */}
                 <View style={styles.starsContainer}>
                     {[1, 2, 3, 4, 5].map((i) => (
-                        <MaterialIcons key={i} name="star" size={36} color={COLORS.yellow} />
+                        <MaterialIcons key={i} name="star" size={28} color={COLORS.yellow} />
                     ))}
                 </View>
 
@@ -139,7 +139,7 @@ const QuizSocialProofScreen = () => {
                     </View>
 
                     <Text style={styles.testimonialText}>
-                        "O escaneamento por IA é incrível, facilitou muito minha dieta!"
+                        “O escaneamento por IA é incrível, facilitou muito minha dieta!”
                     </Text>
 
                     {/* Pagination Dots */}
@@ -189,11 +189,11 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 24,
+    paddingTop: 8,
+    paddingBottom: 12,
     flexDirection: 'column',
     alignItems: 'flex-start',
-    gap: 24,
+    gap: 12,
   },
   backButton: {
     width: 40,
@@ -202,90 +202,92 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   headerTitle: {
-    fontSize: 30,
+    fontSize: 24,
     fontWeight: '800', // extrabold
     color: COLORS.primary,
     letterSpacing: -0.5,
-    lineHeight: 36,
+    lineHeight: 30,
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingBottom: 40,
+    paddingBottom: 20,
+    flexGrow: 1,
+    justifyContent: 'space-evenly',
   },
   starsContainer: {
     flexDirection: 'row',
     backgroundColor: COLORS.slate50,
-    paddingVertical: 24,
-    paddingHorizontal: 40, // wide padding
+    paddingVertical: 16,
+    paddingHorizontal: 24, // wide padding
     borderRadius: 24,
     borderWidth: 1,
     borderColor: COLORS.slate100,
-    gap: 8,
-    marginBottom: 40,
+    gap: 6,
+    marginBottom: 20,
   },
   avatarSection: {
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: 24,
   },
   avatarGroup: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 96,
-    marginBottom: 16,
+    height: 72,
+    marginBottom: 8,
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 4,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 3,
     borderColor: COLORS.white,
-    marginHorizontal: -12, // negative margin for overlap
+    marginHorizontal: -10, // negative margin for overlap
   },
   avatarLarge: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    borderWidth: 4,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 3,
     borderColor: COLORS.white,
-    marginHorizontal: -12,
+    marginHorizontal: -10,
     zIndex: 10,
     transform: [{ scale: 1.1 }],
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,
-    shadowRadius: 15,
+    shadowRadius: 10,
   },
   userCountText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: COLORS.slate500,
     letterSpacing: 0.5,
   },
   statContainer: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 24,
     paddingHorizontal: 16,
   },
   statTitle: {
-    fontSize: 36, // text-4xl
+    fontSize: 28, // text-4xl
     fontWeight: '900', // black
     color: COLORS.primary,
-    marginBottom: 8,
+    marginBottom: 4,
     textAlign: 'center',
   },
   statSubtitle: {
-    fontSize: 18, // text-lg
+    fontSize: 15, // text-lg
     color: COLORS.slate600,
     fontWeight: '500', // medium
     textAlign: 'center',
-    lineHeight: 26,
+    lineHeight: 22,
   },
   card: {
     width: '100%',
     backgroundColor: COLORS.slate100,
-    borderRadius: 28,
-    padding: 24,
+    borderRadius: 24,
+    padding: 16,
     position: 'relative',
     overflow: 'hidden',
   },
@@ -303,23 +305,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 12,
     zIndex: 1,
   },
   userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
   },
   userAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     borderWidth: 2,
     borderColor: COLORS.white,
   },
   userName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: COLORS.slate900,
   },
@@ -328,18 +330,18 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   testimonialText: {
-    fontSize: 16, // base
+    fontSize: 14, // base
     color: COLORS.slate800,
     fontWeight: '500',
-    lineHeight: 24, // relaxed
-    marginBottom: 16,
+    lineHeight: 20, // relaxed
+    marginBottom: 12,
     zIndex: 1,
   },
   paginationDots: {
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 6,
-    paddingTop: 8,
+    paddingTop: 4,
   },
   dot: {
     width: 6,
@@ -353,15 +355,15 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: 24,
-    paddingBottom: 24,
-    paddingTop: 12,
+    paddingBottom: 16,
+    paddingTop: 8,
   },
   continueButton: {
     backgroundColor: COLORS.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 18,
+    paddingVertical: 14,
     borderRadius: 16,
     shadowColor: COLORS.primary,
     shadowOffset: {
@@ -374,7 +376,7 @@ const styles = StyleSheet.create({
   },
   continueButtonText: {
     color: COLORS.white,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     marginRight: 8,
   },

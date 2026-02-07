@@ -2,16 +2,17 @@ import React, { useState } from 'react';
 import { StyleSheet, TextInput, Pressable, ScrollView, View, Modal, TouchableOpacity } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useTheme } from '@/context/ThemeContext';
 import { BlurView } from 'expo-blur';
 import { FruitTheme } from '@/constants/Colors';
+import { useAuth } from '@/src/context/AuthContext';
 
 type TabType = 'account' | 'security' | 'appearance';
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('account');
   const { theme, setTheme, fruit, setFruit, colors } = useTheme();
   const isDark = theme === 'dark';
@@ -144,9 +145,10 @@ export default function SettingsScreen() {
         <ThemedText type="subtitle" style={styles.sectionTitle}>Conta</ThemedText>
         <Pressable 
           style={StyleSheet.flatten([styles.logoutButton, { borderColor: colors.border }])}
-          onPress={() => {
-            router.dismissAll();
-            router.replace('/welcome');
+          onPress={async () => {
+            await signOut();
+            // Force navigation to login to meet user requirement
+            router.replace('/login');
           }}
         >
           <IconSymbol name="rectangle.portrait.and.arrow.right" size={20} color={colors.text} />

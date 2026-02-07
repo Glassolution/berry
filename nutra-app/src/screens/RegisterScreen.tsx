@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,9 +15,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { supabase } from '../lib/supabase';
+import { useQuiz } from '../context/QuizContext';
 import { signInWithGoogle } from '../services/socialAuth';
 import Svg, { Path, Circle } from 'react-native-svg';
 
@@ -30,21 +30,48 @@ const BACKGROUND_ICONS = [
   'sports-soccer', 'sports-basketball', 'sports-volleyball', 'sports-rugby'
 ];
 
-export default function LoginScreen() {
+export default function RegisterScreen() {
   const router = useRouter();
+  const { quizData } = useQuiz();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [networkStatus, setNetworkStatus] = useState<'checking' | 'ok' | 'error'>('checking');
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
-  const getInputStyle = (name: string, value: string) => {
-    if (focusedInput === name) {
-      return [styles.input, { borderColor: '#000000', backgroundColor: '#FFFFFF' }];
+  useEffect(() => {
+    checkConnection();
+  }, []);
+
+  const checkConnection = async () => {
+    try {
+      const response = await fetch('https://shfhvlogmkfnqxcuumfl.supabase.co/rest/v1/', {
+        method: 'HEAD',
+        headers: {
+          'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNoZmh2bG9nbWtmbnF4Y3V1bWZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MjM4NDksImV4cCI6MjA4MDk5OTg0OX0.ialrVY_ntBQ6vKkB5RxyyKXbAQSRMTM3fCKS2MYgM5o'
+        }
+      });
+      if (response.ok || response.status === 401 || response.status === 200) {
+        setNetworkStatus('ok');
+      } else {
+        console.warn('Network check failed with status:', response.status);
+        setNetworkStatus('error');
+      }
+    } catch (e) {
+      console.error('Network check error:', e);
+      setNetworkStatus('error');
     }
-    if (value.length > 0) {
-      return [styles.input, { borderColor: '#E5E7EB', backgroundColor: '#FFFFFF' }];
+  };
+
+  const getInputStyle = (fieldName: string, value: string) => {
+    if (focusedInput === fieldName) {
+      return [styles.input, { borderColor: '#000000', backgroundColor: '#FFFFFF' }];
+    } else if (value.length > 0) {
+      return [styles.input, { borderColor: '#E5E7EB', backgroundColor: '#F9FAFB' }];
     }
     return styles.input;
   };
@@ -54,47 +81,84 @@ export default function LoginScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       setLoading(true);
       await signInWithGoogle();
-      router.replace('/(tabs)');
     } catch (error) {
-      Alert.alert('Erro no Login', (error as Error).message);
+      Alert.alert('Erro no Cadastro', (error as Error).message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEmailLogin = async () => {
+  const handleRegister = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setErrorMessage('');
-    if (!email || !password) {
-      setErrorMessage('Por favor, preencha todos os campos.');
+    
+    if (!email || !password || !confirmPassword) {
+      setErrorMessage('Por favor, preencha todos os campos');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMessage('As senhas não coincidem');
       return;
     }
 
     setLoading(true);
-    setErrorMessage('');
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // 3. Sign up user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
       });
 
-      if (error) throw error;
-      
-      router.replace('/(tabs)');
-    } catch (error) {
-      const msg = (error as Error).message;
-      if (msg.includes('Email not confirmed')) {
-         setErrorMessage('Email não confirmado. Verifique sua caixa de entrada.');
-      } else if (msg.includes('Invalid login credentials')) {
-         setErrorMessage('Email ou senha incorretos.');
-      } else if (msg.includes('Sem conexão')) {
-         setErrorMessage(msg);
-      } else if (msg === 'Network request failed') {
-         setErrorMessage('Erro de conexão. Verifique sua internet.');
-      } else {
-         setErrorMessage(msg);
+      if (authError) throw authError;
+
+      if (authData.user) {
+        // 4. Save Quiz Data to Profile
+        const updates = {
+          id: authData.user.id,
+          email: email,
+          quiz_data: quizData,
+          gender: quizData.gender,
+          age: quizData.age,
+          activity_level: quizData.activityLevel,
+          height: quizData.height,
+          weight: quizData.weight,
+          goal_weight: quizData.goalWeight,
+          updated_at: new Date(),
+        };
+
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert(updates);
+
+        if (profileError) {
+          console.warn('Error saving profile (ignoring to allow flow):', profileError);
+        }
+
+        if (authData.session) {
+          router.replace('/diet-onboarding');
+        } else {
+          // Force sign out so user has to log in manually
+          await supabase.auth.signOut();
+          setErrorMessage('Conta criada! Verifique seu email para confirmar o cadastro antes de entrar.');
+          router.replace('/login');
+          // Add a slight delay to ensure the alert/message is seen if we were staying on this screen, 
+          // but since we redirect to login, the user needs to see the message THERE or get an alert here.
+          // Let's use Alert here as fallback since we are redirecting.
+          Alert.alert('Sucesso', 'Conta criada! Verifique seu email para confirmar o cadastro.');
+        }
       }
+
+    } catch (error) {
+      console.error('Registration error:', error);
+      let msg = (error as Error).message;
+      if (msg === 'Network request failed') {
+        msg = 'Erro de conexão. Verifique sua internet e tente novamente.';
+      } else if (msg.includes('Sem conexão')) {
+        // keep original message
+      }
+      setErrorMessage(msg);
     } finally {
       setLoading(false);
     }
@@ -111,7 +175,7 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       {/* Background Pattern */}
-      <View style={styles.patternContainer} pointerEvents="none">
+      <View style={styles.patternContainer}>
         <View style={styles.patternGrid}>
           {BACKGROUND_ICONS.map((icon, index) => (
             <MaterialIcons
@@ -188,11 +252,19 @@ export default function LoginScreen() {
               <Text style={styles.appTagline}>Nutrição que se adapta a você</Text>
             </View>
 
+            {/* Network Status Indicator */}
+            {networkStatus === 'error' && (
+              <View style={styles.networkError}>
+                 <MaterialIcons name="wifi-off" size={14} color="#B91C1C" />
+                 <Text style={styles.networkErrorText}>Erro de conexão com o servidor</Text>
+              </View>
+            )}
+
             {/* Login Card */}
             <View style={styles.card}>
               <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>Bem-vindo de volta</Text>
-                <Text style={styles.cardSubtitle}>Sua jornada continua aqui</Text>
+                <Text style={styles.cardTitle}>Crie sua conta</Text>
+                <Text style={styles.cardSubtitle}>Comece sua jornada hoje</Text>
               </View>
 
               <View style={styles.inputsContainer}>
@@ -214,12 +286,7 @@ export default function LoginScreen() {
 
                 {/* Password Input */}
                 <View style={styles.inputGroup}>
-                  <View style={styles.passwordHeader}>
-                    <Text style={styles.inputLabel}>SENHA</Text>
-                    <TouchableOpacity>
-                      <Text style={styles.forgotPassword}>ESQUECEU?</Text>
-                    </TouchableOpacity>
-                  </View>
+                  <Text style={styles.inputLabel}>SENHA</Text>
                   <View style={styles.passwordInputContainer}>
                     <TextInput
                       style={getInputStyle('password', password)}
@@ -243,23 +310,65 @@ export default function LoginScreen() {
                     </TouchableOpacity>
                   </View>
                 </View>
+
+                 {/* Confirm Password Input */}
+                 <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>CONFIRMAR SENHA</Text>
+                  <View style={styles.passwordInputContainer}>
+                    <TextInput
+                      style={getInputStyle('confirmPassword', confirmPassword)}
+                      placeholder="••••••••"
+                      placeholderTextColor="#D1D5DB"
+                      value={confirmPassword}
+                      onChangeText={setConfirmPassword}
+                      secureTextEntry={!showConfirmPassword}
+                      onFocus={() => setFocusedInput('confirmPassword')}
+                      onBlur={() => setFocusedInput(null)}
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeIcon}
+                      onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      <MaterialIcons
+                        name={showConfirmPassword ? 'visibility' : 'visibility-off'}
+                        size={20}
+                        color="#9CA3AF"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
 
-              {/* Login Button */}
+              {/* Register Button */}
               <TouchableOpacity
-                style={styles.loginButton}
-                onPress={handleEmailLogin}
+                style={[styles.loginButton, loading && { opacity: 0.7 }]}
+                onPress={handleRegister}
                 activeOpacity={0.9}
+                disabled={loading}
               >
-                <Text style={styles.loginButtonText}>Entrar</Text>
-                <MaterialIcons name="auto-awesome" size={20} color="white" />
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Text style={styles.loginButtonText}>Criar conta</Text>
+                    <MaterialIcons name="arrow-forward" size={20} color="white" />
+                  </>
+                )}
               </TouchableOpacity>
 
-              {/* Register Link */}
-              <View style={styles.registerContainer}>
-                <Text style={styles.registerText}>Não tem uma conta?</Text>
-                <TouchableOpacity onPress={() => router.push('/register')}>
-                  <Text style={styles.registerLink}>Cadastre-se</Text>
+              {/* Error Message */}
+              {errorMessage ? (
+                <View style={styles.errorContainer}>
+                  <MaterialIcons name="error-outline" size={16} color="#E11D48" />
+                  <Text style={styles.errorText}>{errorMessage}</Text>
+                </View>
+              ) : null}
+
+              {/* Login Link */}
+               <View style={styles.registerContainer}>
+                <Text style={styles.registerText}>Já tem uma conta?</Text>
+                <TouchableOpacity onPress={() => router.push('/login')}>
+                  <Text style={styles.loginLink}>Entrar</Text>
                 </TouchableOpacity>
               </View>
 
@@ -316,11 +425,13 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+    paddingTop: Platform.OS === 'android' ? 20 : 0, // Add top padding for Android
   },
   headerBar: {
     paddingHorizontal: 24,
-    paddingTop: 8,
-    zIndex: 10,
+    paddingTop: 16, // Increase top padding
+    paddingBottom: 8,
+    zIndex: 10, // Ensure it's above other elements
   },
   closeButton: {
     width: 40,
@@ -349,18 +460,17 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 20,
-    justifyContent: 'center', // Center vertically
+    justifyContent: 'center',
+    padding: 24,
   },
   content: {
-    paddingHorizontal: 24,
-    paddingBottom: 24, // Reduced padding
-    flex: 1, // Ensure content takes available space
-    justifyContent: 'center', // Center content vertically
+    alignItems: 'center',
+    gap: 32,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 24, // Reduced margin
+    gap: 8,
+    marginTop: 40,
   },
   logoContainer: {
     flexDirection: 'row',
@@ -379,6 +489,23 @@ const styles = StyleSheet.create({
     color: '#000000',
     opacity: 0.6,
     textAlign: 'center',
+  },
+  networkError: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#FEF2F2',
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  networkErrorText: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
+    color: '#B91C1C',
   },
   card: {
     width: '100%',
@@ -428,7 +555,7 @@ const styles = StyleSheet.create({
   },
   input: {
     width: '100%',
-    backgroundColor: '#EEF5FF',
+    backgroundColor: '#F9FAFB',
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 16,
@@ -436,18 +563,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     color: '#000000',
     borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  passwordHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-  },
-  forgotPassword: {
-    fontFamily: 'Manrope_700Bold',
-    fontSize: 10,
-    color: '#9CA3AF',
-    textTransform: 'uppercase',
+    borderColor: '#E5E7EB',
   },
   passwordInputContainer: {
     position: 'relative',
@@ -523,7 +639,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6B7280',
   },
-  registerLink: {
+  loginLink: {
     fontFamily: 'Manrope_700Bold',
     fontSize: 14,
     color: '#E11D48',

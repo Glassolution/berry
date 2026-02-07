@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import * as Linking from 'expo-linking';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
@@ -7,12 +8,16 @@ type AuthContextType = {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isSigningOut: boolean;
+  signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   loading: true,
+  isSigningOut: false,
+  signOut: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -21,6 +26,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const isSigningOutRef = useRef(false);
+
+  const setSigningOut = (value: boolean) => {
+    isSigningOutRef.current = value;
+    setIsSigningOut(value);
+  };
 
   useEffect(() => {
     // Check active session
@@ -32,7 +44,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     // Listen for changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log(`Auth state changed: ${event}`, session?.user?.id);
+      
+      if (isSigningOutRef.current) {
+        console.log('Ignorando atualização de sessão pois estamos fazendo logout.');
+        return;
+      }
+
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -100,10 +119,50 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
+  const signOut = async () => {
+    try {
+      console.log('Iniciando processo de signOut...');
+      setSigningOut(true);
+      await supabase.auth.signOut({ scope: 'local' });
+
+      // Forçar limpeza manual do AsyncStorage para garantir
+      const keys = await AsyncStorage.getAllKeys();
+      const supabaseKeys = keys.filter(k => k.includes('supabase') || k.includes('sb-'));
+      if (supabaseKeys.length > 0) {
+        console.log('Removendo chaves persistentes do Supabase:', supabaseKeys);
+        await AsyncStorage.multiRemove(supabaseKeys);
+      }
+
+      try {
+        const { error } = await supabase.auth.signOut({ scope: 'global' });
+        if (error) {
+          console.error('Erro ao invalidar sessão globalmente:', error);
+        }
+      } catch (error) {
+        console.error('Erro ao invalidar sessão globalmente:', error);
+      }
+    } catch (error) {
+      console.error('Error in context signOut:', error);
+    } finally {
+      console.log('Definindo sessão como nula no estado.');
+      setSession(null);
+      setUser(null);
+
+      for (let i = 0; i < 10; i++) {
+        try {
+          const { data } = await supabase.auth.getSession();
+          if (!data.session) break;
+        } catch {}
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+
+      setSigningOut(false);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, loading }}>
+    <AuthContext.Provider value={{ user, session, loading, isSigningOut, signOut }}>
       {children}
     </AuthContext.Provider>
   );
 };
-

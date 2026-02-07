@@ -2,7 +2,7 @@ import { supabase } from '../lib/supabase';
 import { SignUpWithPasswordCredentials, SignInWithPasswordCredentials } from '@supabase/supabase-js';
 
 export const authService = {
-  async signUp({ email, password, options }: SignUpWithPasswordCredentials) {
+  async signUp({ email, password, options }: { email: string, password: string, options?: any }) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -12,7 +12,7 @@ export const authService = {
     return data;
   },
 
-  async signIn({ email, password }: SignInWithPasswordCredentials) {
+  async signIn({ email, password }: { email: string, password: string }) {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
