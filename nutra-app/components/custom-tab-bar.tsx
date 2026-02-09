@@ -1,9 +1,11 @@
 import React from 'react';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Pressable, StyleSheet, View, Platform, Text, Dimensions } from 'react-native';
+import { Pressable, StyleSheet, View, Platform, Text, Dimensions, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '@/context/ThemeContext';
+import { useNutrition } from '@/src/context/NutritionContext';
+import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
@@ -18,6 +20,8 @@ const COLORS = {
 export default function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const activeIndex = state.index;
   const { theme } = useTheme();
+  const { addMeal } = useNutrition();
+  const router = useRouter();
   const isDark = theme === 'dark';
 
   const go = (name: string) => {
@@ -28,21 +32,26 @@ export default function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 
   const isFocused = (name: string) => state.routes[activeIndex]?.name === name;
 
-  const onScanPress = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      alert('Permita acesso às imagens para escanear.');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: false,
-      quality: 1,
-    });
+  const handleImageResult = (result: ImagePicker.ImagePickerResult) => {
     if (!result.canceled) {
       const uri = result.assets?.[0]?.uri;
-      alert(uri ? 'Imagem selecionada: ' + uri : 'Imagem selecionada.');
+      if (uri) {
+         // Simulate AI Analysis
+         const simulatedCalories = Math.floor(Math.random() * (800 - 200) + 200); // 200-800 kcal
+         const p = Math.round((simulatedCalories * 0.3) / 4);
+         const c = Math.round((simulatedCalories * 0.4) / 4);
+         const f = Math.round((simulatedCalories * 0.3) / 9);
+         
+         addMeal("Refeição Escaneada", simulatedCalories, { protein: p, carbs: c, fats: f }, uri);
+         
+         Alert.alert("Sucesso", `Alimento identificado! ${simulatedCalories} kcal adicionadas.`);
+         router.push('/(tabs)'); // Go to home
+      }
     }
+  };
+
+  const onScanPress = () => {
+    router.push('/scanner');
   };
 
   const TabItem = ({ name, icon, label }: { name: string; icon: any; label: string }) => {

@@ -8,11 +8,18 @@
       "package": "com.ceopear.nutraapp",
       "permissions": [
         "INTERNET",
-        "ACCESS_NETWORK_STATE"
+        "ACCESS_NETWORK_STATE",
+        "CAMERA"
       ]
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Precisamos da câmera para escanear seus alimentos e calcular calorias."
+        }
+      ]
     ]
   }
 }

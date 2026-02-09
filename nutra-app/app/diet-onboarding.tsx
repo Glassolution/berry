@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/src/context/AuthContext';
 import { DietPreference, FoodRestriction, useQuiz } from '@/src/context/QuizContext';
+import { useScan } from '@/src/context/ScanContext';
 import { supabase } from '@/src/lib/supabase';
 import { calculateDietPlan } from '@/src/utils/nutritionCalculations';
 
@@ -54,6 +55,7 @@ export default function DietOnboardingScreen() {
   const isDark = theme === 'dark';
   const { user } = useAuth();
   const { quizData, updateQuizData } = useQuiz();
+  const { pendingScan, setPendingScan } = useScan();
 
   const [restrictions, setRestrictions] = useState<FoodRestriction[]>(Array.isArray((quizData as any).restrictions) ? ((quizData as any).restrictions as FoodRestriction[]) : []);
   const [restrictionOtherText, setRestrictionOtherText] = useState<string>((quizData as any).restrictionOtherText ?? '');
@@ -161,7 +163,15 @@ export default function DietOnboardingScreen() {
         activeDietPlan: plan as any,
       } as any);
 
-      router.replace('/diet');
+      if (pendingScan) {
+        router.replace({
+            pathname: '/ScanResultScreen',
+            params: pendingScan as any // Type assertion to satisfy expo-router params
+        });
+        setPendingScan(null);
+      } else {
+        router.replace('/diet');
+      }
     } catch (e) {
       Alert.alert('Erro', 'Falha ao gerar sua dieta. Tente novamente.');
     } finally {

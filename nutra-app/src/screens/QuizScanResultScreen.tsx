@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, Dimensions, ScrollView, Animated } f
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Svg, { Circle } from 'react-native-svg';
 
@@ -50,7 +50,20 @@ const CircularProgress = ({ value, total, color, label, amount }: { value: numbe
 
 const QuizScanResultScreen = () => {
   const router = useRouter();
+  const { imageUri, foodName, calories, protein, carbs, fat } = useLocalSearchParams();
   const fadeAnim = React.useRef(new Animated.Value(1)).current;
+
+  // Default fallback image
+  const displayImage = imageUri ? { uri: imageUri as string } : { uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuDt9skcTa4mMUZP0up8_to_z4c2UkxqJajQmw3Etxfkgt1vG-JHx9I7Dify9furrQgs64q_dGJKzHRJMWHv4AtFPYZaMRSL3sEONWQuwPsVXoUh7EU_Qms_ollfTiy05Z7XSvELvSkvANH9FxoVgKwf3yTSU1rZVy_qq0iTQAI174qubxvwCFrp5lx-HCHSMrB3hmg7RuUdZoGpVo4fkntDHiO9D2eBKBKYCxZLu_29NeMvJtzboXgEnjU0Z5tG2CjuTk_dNifX_Ags" };
+
+  // Parse numeric values or use defaults
+  const data = {
+    name: (foodName as string) || "Salmão com Quinoa",
+    calories: calories ? String(calories) : "452",
+    protein: protein ? String(protein) : "32",
+    carbs: carbs ? String(carbs) : "24",
+    fat: fat ? String(fat) : "12",
+  };
 
   React.useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -74,7 +87,7 @@ const QuizScanResultScreen = () => {
       {/* Top Image Section */}
       <View style={styles.imageSection}>
         <Image 
-          source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuDt9skcTa4mMUZP0up8_to_z4c2UkxqJajQmw3Etxfkgt1vG-JHx9I7Dify9furrQgs64q_dGJKzHRJMWHv4AtFPYZaMRSL3sEONWQuwPsVXoUh7EU_Qms_ollfTiy05Z7XSvELvSkvANH9FxoVgKwf3yTSU1rZVy_qq0iTQAI174qubxvwCFrp5lx-HCHSMrB3hmg7RuUdZoGpVo4fkntDHiO9D2eBKBKYCxZLu_29NeMvJtzboXgEnjU0Z5tG2CjuTk_dNifX_Ags" }}
+          source={displayImage}
           style={StyleSheet.absoluteFillObject}
           contentFit="cover"
         />
@@ -86,7 +99,7 @@ const QuizScanResultScreen = () => {
         <View style={styles.scanBadgeContainer}>
           <View style={styles.scanBadge}>
             <MaterialIcons name="check-circle" size={20} color="#22C55E" />
-            <Text style={styles.scanBadgeText}>SCAN COMPLETE</Text>
+            <Text style={styles.scanBadgeText}>ANÁLISE CONCLUÍDA</Text>
           </View>
         </View>
       </View>
@@ -101,31 +114,31 @@ const QuizScanResultScreen = () => {
     >
           <View style={styles.headerTextContainer}>
             <Text style={styles.overline}>RESULTADO DA ANÁLISE</Text>
-            <Text style={styles.title}>Salmão com Quinoa</Text>
+            <Text style={styles.title}>{data.name}</Text>
           </View>
 
           {/* Macros Grid */}
           <View style={styles.macrosGrid}>
             <CircularProgress 
-              value={32} 
-              total={43} // Estimated based on 75%
+              value={Number(data.protein)} 
+              total={100} 
               color="#3B82F6" // Blue for Protein
               label="PROTEÍNAS" 
-              amount="32g" 
+              amount={`${data.protein}g`}
             />
             <CircularProgress 
-              value={24} 
-              total={53} // Estimated based on 45%
+              value={Number(data.carbs)} 
+              total={100} 
               color="#F59E0B" // Amber for Carbs
               label="CARBOS" 
-              amount="24g" 
+              amount={`${data.carbs}g`} 
             />
             <CircularProgress 
-              value={12} 
-              total={48} // Estimated based on 25%
+              value={Number(data.fat)} 
+              total={100} 
               color="#EF4444" // Red for Fats
               label="GORDURAS" 
-              amount="12g" 
+              amount={`${data.fat}g`} 
             />
           </View>
 
@@ -134,7 +147,7 @@ const QuizScanResultScreen = () => {
             <View>
               <Text style={styles.caloriesLabel}>TOTAL ESTIMADO</Text>
               <View style={styles.caloriesValueRow}>
-                <Text style={styles.caloriesValue}>452</Text>
+                <Text style={styles.caloriesValue}>{data.calories}</Text>
                 <Text style={styles.caloriesUnit}>kcal</Text>
               </View>
             </View>

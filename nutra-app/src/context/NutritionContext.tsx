@@ -13,6 +13,7 @@ interface MealLog {
   name: string;
   calories: number;
   macros?: MacroNutrients;
+  imageUri?: string;
   timestamp: number;
 }
 
@@ -23,9 +24,12 @@ interface NutritionContextType {
   targetMacros: MacroNutrients;
   consumedMacros: MacroNutrients;
   mealLogs: MealLog[];
-  addMeal: (name: string, calories: number, macros?: MacroNutrients) => void;
+  addMeal: (name: string, calories: number, macros?: MacroNutrients, imageUri?: string) => void;
   removeMeal: (id: string) => void;
   resetDailyLog: () => void;
+  waterIntake: number;
+  waterTarget: number;
+  addWater: (amount: number) => void;
 }
 
 const NutritionContext = createContext<NutritionContextType | undefined>(undefined);
@@ -35,6 +39,7 @@ export const NutritionProvider = ({ children }: { children: ReactNode }) => {
 
   // State for daily logs
   const [mealLogs, setMealLogs] = useState<MealLog[]>([]);
+  const [waterIntake, setWaterIntake] = useState(0); // in ml
 
   // Calculate targets based on Quiz Data (Single Source of Truth)
   // This ensures Profile and Dashboard always see the same targets
@@ -64,6 +69,10 @@ export const NutritionProvider = ({ children }: { children: ReactNode }) => {
     carbs: calculatedPlan.macros.carbs,
     fats: calculatedPlan.macros.fats,
   };
+  
+  // Water target logic (simple heuristic: 35ml per kg of weight)
+  const weight = Number(quizData.weight ?? 70);
+  const waterTarget = Math.round(weight * 35); // e.g., 70kg * 35 = 2450ml
 
   // Calculate consumed totals
   const consumedCalories = mealLogs.reduce((acc, meal) => acc + meal.calories, 0);
@@ -78,15 +87,16 @@ export const NutritionProvider = ({ children }: { children: ReactNode }) => {
 
   const remainingCalories = targetCalories - consumedCalories;
 
-  const addMeal = (name: string, calories: number, macros?: MacroNutrients) => {
+  const addMeal = (name: string, calories: number, macros?: MacroNutrients, imageUri?: string) => {
     const newMeal: MealLog = {
       id: Math.random().toString(36).substr(2, 9),
       name,
       calories,
       macros,
+      imageUri,
       timestamp: Date.now(),
     };
-    setMealLogs((prev) => [...prev, newMeal]);
+    setMealLogs((prev) => [newMeal, ...prev]); // Add to beginning for "Recent" order
   };
 
   const removeMeal = (id: string) => {
@@ -95,6 +105,11 @@ export const NutritionProvider = ({ children }: { children: ReactNode }) => {
 
   const resetDailyLog = () => {
     setMealLogs([]);
+    setWaterIntake(0);
+  };
+  
+  const addWater = (amount: number) => {
+    setWaterIntake(prev => prev + amount);
   };
 
   return (
@@ -109,6 +124,9 @@ export const NutritionProvider = ({ children }: { children: ReactNode }) => {
         addMeal,
         removeMeal,
         resetDailyLog,
+        waterIntake,
+        waterTarget,
+        addWater
       }}
     >
       {children}

@@ -40,7 +40,22 @@ export default function ProfileScreen() {
   const toggleTheme = () => setTheme(isDark ? 'light' : 'dark');
 
   // User Data
-  const userName = session?.user?.user_metadata?.full_name || "Floyd Miles";
+  const userMetadata = (session?.user?.user_metadata ?? {}) as any;
+  const displayName: string =
+    userMetadata.full_name ||
+    userMetadata.name ||
+    userMetadata.user_name ||
+    userMetadata.username ||
+    (typeof session?.user?.email === 'string' ? session.user.email.split('@')[0] : '') ||
+    'Usuário';
+  const userName = displayName;
+  const avatarUrl: string | undefined = userMetadata.avatar_url || userMetadata.picture;
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part: string) => part[0]?.toUpperCase())
+    .join('');
   
   // Get Nutrition Data from Context
   const { 
@@ -115,11 +130,11 @@ export default function ProfileScreen() {
                 <View style={styles.headerContent}>
                     <View style={styles.userRow}>
                          <View style={styles.avatarContainer}>
-                             <Image 
-                                 source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuA702fxZxwhXSBJzRRUZMTyGOjR5zeQsmNAaMFCpjMIwlfIEy_rwEqBEOPPHXos8jV2HKeZCQNRpuEFsP6OtGwvcFKmFiwOf9Gqo3qcy7hrcaT2WTLx_bmYhMujbND0iDkZjGR8ReTQxQcbmyt2oTKg28MgXc5ruzAwQtdk3tQQtg1o3TaOpC3RQ7f7zc6oKGQQfeqMF4-AmCMmsaC3WZGf8IRgwv_GJKRr_705JLdPgecSJf6mbJVXfwjzRPKa_EAcDKiF9IrgS6Et" }}
-                                 style={styles.avatarImage}
-                                 contentFit="cover"
-                             />
+                             {avatarUrl ? (
+                               <Image source={{ uri: avatarUrl }} style={styles.avatarImage} contentFit="cover" />
+                             ) : (
+                               <Text style={styles.avatarFallbackText}>{initials || 'U'}</Text>
+                             )}
                          </View>
                          <View>
                              <Text style={styles.greetingText}>MEU PERFIL</Text>
@@ -221,6 +236,17 @@ export default function ProfileScreen() {
                     <MaterialIcons name="chevron-right" size={24} color={COLORS.gray400} />
                 </Pressable>
 
+                {/* Histórico de Scans */}
+                <Pressable style={styles.settingItem} onPress={() => router.push('/ScanHistoryScreen')}>
+                    <View style={styles.settingLeft}>
+                        <View style={styles.settingIconBox}>
+                            <MaterialIcons name="history" size={20} color={COLORS.gray900} />
+                        </View>
+                        <Text style={styles.settingText}>Histórico de Scans</Text>
+                    </View>
+                    <MaterialIcons name="chevron-right" size={24} color={COLORS.gray400} />
+                </Pressable>
+
                 {/* Metas */}
                 <Pressable style={styles.settingItem} onPress={() => router.push('/(tabs)/progress')}>
                     <View style={styles.settingLeft}>
@@ -305,11 +331,19 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.8)',
     overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(238, 43, 91, 0.9)',
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
     elevation: 8,
+  },
+  avatarFallbackText: {
+    color: COLORS.white,
+    fontSize: 14,
+    fontFamily: 'Manrope_800ExtraBold',
   },
   avatarImage: {
     width: '100%',

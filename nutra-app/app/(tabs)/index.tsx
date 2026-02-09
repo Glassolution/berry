@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Pressable, View, Text, ScrollView, Dimensions, StatusBar } from 'react-native';
+import { StyleSheet, Pressable, View, Text, ScrollView, Dimensions, StatusBar, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
@@ -8,6 +8,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import { useAuth } from '@/src/context/AuthContext';
 import { useNutrition } from '@/src/context/NutritionContext';
+import { useInsights } from '@/src/context/InsightsContext';
+import { InsightCard } from '@/components/InsightCard';
 
 // Colors from Design
 const COLORS = {
@@ -27,34 +29,6 @@ const COLORS = {
 
 const { width } = Dimensions.get('window');
 
-// Original Data adapted to new visual style
-const CATEGORIES = [
-  { id: 1, name: 'VEGANO', icon: 'spa', color: '#FECDD3' }, // red-100
-  { id: 2, name: 'CARBOS', icon: 'bakery-dining', color: '#FFEDD5' }, // orange-100
-  { id: 3, name: 'PROTEÍNA', icon: 'dinner-dining', color: '#F3F4F6' }, // gray-100
-  { id: 4, name: 'LANCHES', icon: 'fastfood', color: '#F3F4F6' },
-  { id: 5, name: 'BEBIDAS', icon: 'local-cafe', color: '#F3F4F6' },
-];
-
-const RECENTS = [
-  { 
-    id: 1,
-    title: 'Salmão Grelhado', 
-    subtitle: '12:37',
-    kcal: 550, 
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDykt7xFUAhYvZZKQsQ4uBlQtJDsXYo-YrUCk-4kUO7BjD9E21BHtpFqY4xTSR0V2slm2GKA40UEcPMXhIL-mxs8GghmT2ZDUzwo8b-qRqJvmreFJI9SBGM65qv1AMBsWKujEs_KYshZWKO3ylE4kB8hKxddXHK6Yw4cbGHMyR_nnmOsAfo5-emF_kBPmnkUhnGUEtEfr-ldjFVBsQxpScyU3kQzi9kOkTHCK7GtJQwHSCFWUXnEgk3ClJT5lffkYxgV8RDnjv84bMG',
-    tag: 'ALMOÇO' 
-  },
-  { 
-    id: 2,
-    title: 'Bowl Mediterrâneo', 
-    subtitle: '08:15',
-    kcal: 320, 
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDltbdqPy6JRGVD9R_HQQFccstHiCZqhCam-WJr6OWi5jjXAs_GsZi-58SCmIkJB0lmP1FfDEAn-wvoQtYb3hokXWb8GNPrZD9AIf5z3BDFNkOeb41TiH8xMirrg81mSEYZEnwchsFL-tdlPpXn7eGLU4UAMcszenXUoRKErJ1S9uALoB9BM4iEsZ66foNqY8GH_QwKQwXgypX3OKpVTqRioZ72cOJaTJVP-P4PJBWOySITCw8wiZUbR9sI0xf4xFNWj1iDLpX1A1OU',
-    tag: 'CAFÉ' 
-  },
-];
-
 export default function DashboardScreen() {
   const { session } = useAuth();
   const { 
@@ -62,26 +36,48 @@ export default function DashboardScreen() {
     remainingCalories, 
     consumedCalories, 
     consumedMacros, 
-    addMeal 
+    addMeal,
+    mealLogs,
+    addWater 
   } = useNutrition();
+
+  const { activeInsight, markAsRead } = useInsights();
+
+  // Logic for Banner Image
+  // User requested static image (prato 3.png) always
+  const bannerSource = require('@/assets/images/prato 3.png');
 
   // Progress (Visualizes Consumed Calories)
   const progress = Math.max(0, Math.min(consumedCalories / targetCalories, 1));
   const circumference = 2 * Math.PI * 40;
   const strokeDashoffset = circumference * (1 - progress);
 
-  const userName = session?.user?.user_metadata?.full_name?.split(' ')[0] || "Floyd"; 
+  const userMetadata = (session?.user?.user_metadata ?? {}) as any;
+  const displayName: string =
+    userMetadata.full_name ||
+    userMetadata.name ||
+    userMetadata.user_name ||
+    userMetadata.username ||
+    (typeof session?.user?.email === 'string' ? session.user.email.split('@')[0] : '') ||
+    'Usuário';
+  const userName = displayName.split(' ')[0] || displayName;
+  const avatarUrl: string | undefined = userMetadata.avatar_url || userMetadata.picture;
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part: string) => part[0]?.toUpperCase())
+    .join('');
 
-  const handleQuickAdd = (meal: typeof RECENTS[0]) => {
-    // Add simple mock macros for these quick adds since we don't have full data
-    // Approximating: Protein = 25%, Carbs = 45%, Fat = 30%
-    const p = Math.round((meal.kcal * 0.25) / 4);
-    const c = Math.round((meal.kcal * 0.45) / 4);
-    const f = Math.round((meal.kcal * 0.30) / 9);
-    
-    addMeal(meal.title, meal.kcal, { protein: p, carbs: c, fats: f });
-  };
- 
+  // Derived Recent Meals for Display
+  const displayRecents = mealLogs.map(log => ({
+    id: log.id,
+    title: log.name,
+    subtitle: new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    kcal: log.calories,
+    image: log.imageUri ? { uri: log.imageUri } : bannerSource,
+    tag: 'REFEIÇÃO' // Could infer based on time (Cafe/Almoco/Jantar)
+  }));
 
   return (
     <View style={styles.container}>
@@ -96,9 +92,10 @@ export default function DashboardScreen() {
         {/* HERO SECTION */}
         <View style={styles.heroSection}>
             <Image 
-                source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuDykt7xFUAhYvZZKQsQ4uBlQtJDsXYo-YrUCk-4kUO7BjD9E21BHtpFqY4xTSR0V2slm2GKA40UEcPMXhIL-mxs8GghmT2ZDUzwo8b-qRqJvmreFJI9SBGM65qv1AMBsWKujEs_KYshZWKO3ylE4kB8hKxddXHK6Yw4cbGHMyR_nnmOsAfo5-emF_kBPmnkUhnGUEtEfr-ldjFVBsQxpScyU3kQzi9kOkTHCK7GtJQwHSCFWUXnEgk3ClJT5lffkYxgV8RDnjv84bMG" }}
+                source={bannerSource}
                 style={StyleSheet.absoluteFillObject}
                 contentFit="cover"
+                transition={1000}
             />
             {/* Gradient Overlay */}
             <LinearGradient
@@ -113,11 +110,11 @@ export default function DashboardScreen() {
                     <View style={styles.userRow}>
                          <Link href="/(tabs)/meals" asChild>
                             <Pressable style={styles.avatarContainer}>
-                                <Image 
-                                    source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuA702fxZxwhXSBJzRRUZMTyGOjR5zeQsmNAaMFCpjMIwlfIEy_rwEqBEOPPHXos8jV2HKeZCQNRpuEFsP6OtGwvcFKmFiwOf9Gqo3qcy7hrcaT2WTLx_bmYhMujbND0iDkZjGR8ReTQxQcbmyt2oTKg28MgXc5ruzAwQtdk3tQQtg1o3TaOpC3RQ7f7zc6oKGQQfeqMF4-AmCMmsaC3WZGf8IRgwv_GJKRr_705JLdPgecSJf6mbJVXfwjzRPKa_EAcDKiF9IrgS6Et" }}
-                                    style={styles.avatarImage}
-                                    contentFit="cover"
-                                />
+                                {avatarUrl ? (
+                                  <Image source={{ uri: avatarUrl }} style={styles.avatarImage} contentFit="cover" />
+                                ) : (
+                                  <Text style={styles.avatarFallbackText}>{initials || 'U'}</Text>
+                                )}
                             </Pressable>
                          </Link>
                          <View>
@@ -206,78 +203,74 @@ export default function DashboardScreen() {
 
         {/* AI INSIGHTS */}
         <View style={styles.insightsSection}>
-            <View style={styles.insightCard}>
-                <View style={styles.insightIconBox}>
-                    <MaterialIcons name="auto-awesome" size={24} color="white" />
+            {activeInsight ? (
+                <InsightCard 
+                    insight={activeInsight} 
+                    onDismiss={() => markAsRead(activeInsight.id)}
+                />
+            ) : (
+                <View style={styles.insightCard}>
+                    <View style={styles.insightIconBox}>
+                        <MaterialIcons name="auto-awesome" size={24} color="white" />
+                    </View>
+                    <View style={styles.insightContent}>
+                        <Text style={styles.insightTitle}>SEM INSIGHTS AGORA</Text>
+                        <Text style={styles.insightText}>
+                            Continue registrando suas refeições para receber dicas personalizadas da IA.
+                        </Text>
+                    </View>
                 </View>
-                <View style={styles.insightContent}>
-                    <Text style={styles.insightTitle}>INSIGHTS DA IA</Text>
-                    <Text style={styles.insightText}>
-                        Você está consumindo <Text style={{fontWeight: 'bold'}}>30% mais proteínas</Text> que o normal. Ótimo para sua recuperação muscular hoje!
-                    </Text>
-                </View>
-            </View>
+            )}
         </View>
 
-        {/* RECENTES (Adapted from Inspired for you) */}
+        {/* RECENTES (History Log) */}
         <View style={styles.sectionContainer}>
             <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>RECENTES</Text>
-                <Pressable>
-                    <Text style={styles.seeAllText}>VER TUDO</Text>
-                </Pressable>
+                {displayRecents.length > 0 && (
+                    <Pressable>
+                        <Text style={styles.seeAllText}>VER TUDO</Text>
+                    </Pressable>
+                )}
             </View>
             
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-                {RECENTS.map((meal) => (
-                    <View key={meal.id} style={styles.mealCard}>
-                        <View style={styles.mealImageContainer}>
-                            <Image source={{ uri: meal.image }} style={styles.mealImage} contentFit="cover" />
-                            {meal.tag && (
-                                <View style={styles.tagBadge}>
-                                    <Text style={styles.tagText}>{meal.tag}</Text>
-                                </View>
-                            )}
-                        </View>
-                        <View style={styles.mealContent}>
-                            <Text style={styles.mealTitle} numberOfLines={1}>{meal.title}</Text>
-                            <Text style={styles.mealSubtitle} numberOfLines={1}>{meal.subtitle}</Text>
-                            
-                            <View style={styles.mealFooter}>
-                                <Text style={styles.mealKcal}>{meal.kcal} kcal</Text>
-                                <Pressable 
-                                  style={styles.addButton}
-                                  onPress={() => handleQuickAdd(meal)}
-                                >
-                                    <MaterialIcons name="add" size={20} color={COLORS.gray900} />
-                                </Pressable>
+            {displayRecents.length === 0 ? (
+                <View style={styles.emptyStateContainer}>
+                    <MaterialIcons name="camera-alt" size={40} color={COLORS.gray300} />
+                    <Text style={styles.emptyStateText}>Sem registros ainda</Text>
+                    <Text style={styles.emptyStateSubText}>Tire uma foto para começar!</Text>
+                </View>
+            ) : (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
+                    {displayRecents.map((meal) => (
+                        <Pressable 
+                            key={meal.id} 
+                            style={styles.mealCard}
+                            onPress={() => Alert.alert('Detalhes', `${meal.title}\n${meal.kcal} kcal\n${meal.subtitle}`)}
+                        >
+                            <View style={styles.mealImageContainer}>
+                                <Image source={meal.image} style={styles.mealImage} contentFit="cover" />
+                                {meal.tag && (
+                                    <View style={styles.tagBadge}>
+                                        <Text style={styles.tagText}>{meal.tag}</Text>
+                                    </View>
+                                )}
                             </View>
-                        </View>
-                    </View>
-                ))}
-            </ScrollView>
-        </View>
-
-        {/* CATEGORIES */}
-        <View style={[styles.sectionContainer, { paddingBottom: 120 }]}>
-            <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>CATEGORIAS</Text>
-            </View>
-            
-            <View style={styles.categoriesRow}>
-                {CATEGORIES.map((cat) => (
-                    <View key={cat.id} style={styles.categoryItem}>
-                        <View style={[styles.categoryIcon, { backgroundColor: cat.color }]}>
-                            {cat.icon === 'bakery-dining' || cat.icon === 'dinner-dining' || cat.icon === 'spa' || cat.icon === 'local-cafe' || cat.icon === 'fastfood' ? (
-                                <MaterialIcons name={cat.icon as any} size={24} color={COLORS.berryRed} />
-                            ) : (
-                                <MaterialIcons name={cat.icon as any} size={24} color={COLORS.berryRed} />
-                            )}
-                        </View>
-                        <Text style={styles.categoryLabel}>{cat.name}</Text>
-                    </View>
-                ))}
-            </View>
+                            <View style={styles.mealContent}>
+                                <Text style={styles.mealTitle} numberOfLines={1}>{meal.title}</Text>
+                                <Text style={styles.mealSubtitle} numberOfLines={1}>{meal.subtitle}</Text>
+                                
+                                <View style={styles.mealFooter}>
+                                    <Text style={styles.mealKcal}>{meal.kcal} kcal</Text>
+                                    <View style={styles.infoIcon}>
+                                        <MaterialIcons name="info-outline" size={20} color={COLORS.gray400} />
+                                    </View>
+                                </View>
+                            </View>
+                        </Pressable>
+                    ))}
+                </ScrollView>
+            )}
         </View>
 
       </ScrollView>
@@ -291,10 +284,10 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.berryBg,
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: 240,
   },
   heroSection: {
-    height: 320, 
+    height: 280, 
     width: '100%',
     position: 'relative',
     justifyContent: 'flex-end',
@@ -325,11 +318,19 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.8)',
     overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(238, 43, 91, 0.9)',
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
     elevation: 8,
+  },
+  avatarFallbackText: {
+    color: COLORS.white,
+    fontSize: 14,
+    fontFamily: 'Manrope_800ExtraBold',
   },
   avatarImage: {
     width: '100%',
@@ -405,7 +406,7 @@ const styles = StyleSheet.create({
   },
   statsSection: {
     paddingHorizontal: 24,
-    marginTop: -30, 
+    marginTop: -40, 
     zIndex: 10,
   },
   statsCard: {
@@ -491,7 +492,7 @@ const styles = StyleSheet.create({
   },
   insightsSection: {
     paddingHorizontal: 24,
-    marginTop: 24,
+    marginTop: 16,
   },
   insightCard: {
     backgroundColor: 'rgba(238, 43, 91, 0.05)', 
@@ -534,7 +535,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   sectionContainer: {
-    marginTop: 32,
+    marginTop: 20,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -589,7 +590,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
-    backdropFilter: 'blur(4px)',
   },
   tagText: {
     color: COLORS.white,
@@ -629,27 +629,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  categoriesRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-  },
-  categoryItem: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  categoryIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  emptyStateContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    paddingVertical: 40,
+    backgroundColor: COLORS.white,
+    borderRadius: 24,
+    marginHorizontal: 24,
+    borderWidth: 1,
+    borderColor: COLORS.gray100,
+    borderStyle: 'dashed',
   },
-  categoryLabel: {
-    fontSize: 10,
+  emptyStateText: {
+    marginTop: 12,
+    fontSize: 14,
     fontFamily: 'Manrope_700Bold',
+    color: COLORS.gray900,
+  },
+  emptyStateSubText: {
+    marginTop: 4,
+    fontSize: 12,
+    fontFamily: 'Manrope_500Medium',
     color: COLORS.gray400,
-    textTransform: 'uppercase',
+  },
+  infoIcon: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

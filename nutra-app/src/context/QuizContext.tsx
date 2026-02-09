@@ -34,6 +34,7 @@ interface QuizContextType {
   quizData: QuizData;
   updateQuizData: (data: Partial<QuizData>) => void;
   resetQuiz: () => void;
+  isQuizCompleted: boolean;
 }
 
 const defaultData: QuizData = {
@@ -67,8 +68,18 @@ export const QuizProvider = ({ children }: { children: ReactNode }) => {
     setQuizData(defaultData);
   };
 
+  const isQuizCompleted = React.useMemo(() => {
+    return (
+      Array.isArray(quizData.restrictions) &&
+      typeof quizData.dietPreference === 'string' &&
+      Array.isArray(quizData.foodsLike) &&
+      Array.isArray(quizData.foodsDislike) &&
+      [3, 4, 5, 6].includes(Number(quizData.mealsPerDay))
+    );
+  }, [quizData]);
+
   return (
-    <QuizContext.Provider value={{ quizData, updateQuizData, resetQuiz }}>
+    <QuizContext.Provider value={{ quizData, updateQuizData, resetQuiz, isQuizCompleted }}>
       {children}
     </QuizContext.Provider>
   );

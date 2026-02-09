@@ -12,6 +12,8 @@ import { PlayfairDisplay_400Regular, PlayfairDisplay_700Bold } from '@expo-googl
 import { AppThemeProvider, useTheme } from '@/context/ThemeContext';
 import { QuizProvider } from '@/src/context/QuizContext';
 import { NutritionProvider } from '@/src/context/NutritionContext';
+import { InsightsProvider } from '@/src/context/InsightsContext';
+import { ScanProvider } from '@/src/context/ScanContext';
 import { AuthProvider, useAuth } from '@/src/context/AuthContext';
 import { useQuiz } from '@/src/context/QuizContext';
 import { supabase } from '@/src/lib/supabase';
@@ -31,6 +33,7 @@ function RootLayoutNav() {
   const router = useRouter();
   const [bootstrapping, setBootstrapping] = useState(false);
   const hasBootstrappedRef = useRef(false);
+  const bootstrappedUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -62,6 +65,15 @@ function RootLayoutNav() {
       router.replace('/(tabs)');
     }
   }, [session, loading, segments, isSigningOut, bootstrapping, router]);
+
+  useEffect(() => {
+    const userId = session?.user?.id ?? null;
+    if (bootstrappedUserIdRef.current !== userId) {
+      bootstrappedUserIdRef.current = userId;
+      hasBootstrappedRef.current = false;
+      setBootstrapping(false);
+    }
+  }, [session?.user?.id]);
 
   useEffect(() => {
     if (loading) return;
@@ -101,13 +113,14 @@ function RootLayoutNav() {
 
         const currentSegment = segments[0] as string | undefined;
         const inQuizFlow = typeof currentSegment === 'string' && currentSegment.startsWith('Quiz');
+        const isScannerFlow = currentSegment === 'scanner' || currentSegment === 'ScanResultScreen';
 
-        if (!inQuizFlow && currentSegment !== 'diet-onboarding' && missingDietFields) {
+        if (!inQuizFlow && !isScannerFlow && currentSegment !== 'diet-onboarding' && missingDietFields) {
           router.replace('/diet-onboarding');
           return;
         }
 
-        if (!inQuizFlow && currentSegment !== 'diet-onboarding' && !missingDietFields && !hasActivePlan) {
+        if (!inQuizFlow && !isScannerFlow && currentSegment !== 'diet-onboarding' && !missingDietFields && !hasActivePlan) {
           const plan = calculateDietPlan(
             quizDataFromDb.gender,
             quizDataFromDb.age,
@@ -184,6 +197,7 @@ function RootLayoutNav() {
         <Stack.Screen name="QuizPlanReadyScreen" />
         <Stack.Screen name="QuizDietPlanScreen" />
         <Stack.Screen name="QuizSaveProgressScreen" />
+        <Stack.Screen name="ScanResultScreen" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', headerShown: false }} />
         <Stack.Screen name="register" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom', headerShown: false }} />
       </Stack>
@@ -210,12 +224,16 @@ export default function RootLayout() {
   return (
     <AppThemeProvider>
       <AuthProvider>
-        <QuizProvider>
-          <NutritionProvider>
-            <RootLayoutNav />
-          </NutritionProvider>
-        </QuizProvider>
-      </AuthProvider>
+          <QuizProvider>
+            <NutritionProvider>
+              <InsightsProvider>
+                <ScanProvider>
+                  <RootLayoutNav />
+                </ScanProvider>
+              </InsightsProvider>
+            </NutritionProvider>
+          </QuizProvider>
+        </AuthProvider>
     </AppThemeProvider>
   );
 }

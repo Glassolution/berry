@@ -64,9 +64,23 @@ const CATEGORIES = [
 
 export default function DashboardScreen() {
   const { session } = useAuth();
-  
-  // Design explicitly requested "Olá, Floyd"
-  const userName = "Floyd"; 
+
+  const userMetadata = (session?.user?.user_metadata ?? {}) as any;
+  const displayName: string =
+    userMetadata.full_name ||
+    userMetadata.name ||
+    userMetadata.user_name ||
+    userMetadata.username ||
+    (typeof session?.user?.email === 'string' ? session.user.email.split('@')[0] : '') ||
+    'Usuário';
+  const userName = displayName.split(' ')[0] || displayName;
+  const avatarUrl: string | undefined = userMetadata.avatar_url || userMetadata.picture;
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part: string) => part[0]?.toUpperCase())
+    .join('');
 
   return (
     <View style={styles.container}>
@@ -98,11 +112,11 @@ export default function DashboardScreen() {
                     <View style={styles.userRow}>
                          <Link href="/settings" asChild>
                             <Pressable style={styles.avatarContainer}>
-                                <Image 
-                                    source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuA702fxZxwhXSBJzRRUZMTyGOjR5zeQsmNAaMFCpjMIwlfIEy_rwEqBEOPPHXos8jV2HKeZCQNRpuEFsP6OtGwvcFKmFiwOf9Gqo3qcy7hrcaT2WTLx_bmYhMujbND0iDkZjGR8ReTQxQcbmyt2oTKg28MgXc5ruzAwQtdk3tQQtg1o3TaOpC3RQ7f7zc6oKGQQfeqMF4-AmCMmsaC3WZGf8IRgwv_GJKRr_705JLdPgecSJf6mbJVXfwjzRPKa_EAcDKiF9IrgS6Et" }}
-                                    style={styles.avatarImage}
-                                    contentFit="cover"
-                                />
+                                {avatarUrl ? (
+                                  <Image source={{ uri: avatarUrl }} style={styles.avatarImage} contentFit="cover" />
+                                ) : (
+                                  <Text style={styles.avatarFallbackText}>{initials || 'U'}</Text>
+                                )}
                             </Pressable>
                          </Link>
                          <View>
@@ -308,11 +322,19 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.8)',
     overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(238, 43, 91, 0.9)',
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
     elevation: 8,
+  },
+  avatarFallbackText: {
+    color: COLORS.white,
+    fontSize: 14,
+    fontFamily: 'Manrope_800ExtraBold',
   },
   avatarImage: {
     width: '100%',
@@ -339,7 +361,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.3)',
-    backdropFilter: 'blur(10px)', // Note: backdropFilter not supported in RN directly, but bg opacity helps
   },
   heroBottomContent: {
     padding: 24,
