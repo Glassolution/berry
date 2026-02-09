@@ -93,7 +93,12 @@ const QuizScanResultScreen = () => {
 
       {/* Bottom Content Section */}
       <View style={styles.contentSection}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <ScrollView 
+      showsVerticalScrollIndicator={false} 
+      contentContainerStyle={styles.scrollContent}
+      bounces={false}
+      overScrollMode="never"
+    >
           <View style={styles.headerTextContainer}>
             <Text style={styles.overline}>RESULTADO DA ANÁLISE</Text>
             <Text style={styles.title}>Salmão com Quinoa</Text>

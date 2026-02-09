@@ -1,25 +1,24 @@
 import React from 'react';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Pressable, StyleSheet, View, Platform, Text } from 'react-native';
+import { Pressable, StyleSheet, View, Platform, Text, Dimensions } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '@/context/ThemeContext';
-import { BlurView } from 'expo-blur';
+
+const { width } = Dimensions.get('window');
+
+const COLORS = {
+  berryRed: "#ee2b5b",
+  berryRedLight: "#fee2e2",
+  gray400: "#9CA3AF",
+  white: "#FFFFFF",
+  black: "#000000",
+};
 
 export default function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const activeIndex = state.index;
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-
-  const colors = {
-    background: isDark ? 'rgba(0, 0, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-    border: isDark ? '#27272a' : '#f3f4f6',
-    active: isDark ? '#FFFFFF' : '#000000',
-    inactive: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)',
-    fabBg: isDark ? '#FFFFFF' : '#000000',
-    fabIcon: isDark ? '#000000' : '#FFFFFF',
-    ring: isDark ? '#000000' : '#FFFFFF',
-  };
 
   const go = (name: string) => {
     const route = state.routes.find((r) => r.name === name);
@@ -50,14 +49,16 @@ export default function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     const focused = isFocused(name);
     return (
       <Pressable style={styles.item} onPress={() => go(name)}>
-        <MaterialIcons 
-          size={24} 
-          color={focused ? colors.active : colors.inactive} 
-          name={icon} 
-        />
+        <View style={[styles.iconContainer, focused && styles.activeIconContainer]}>
+          <MaterialIcons 
+            size={24} 
+            color={focused ? COLORS.berryRed : COLORS.gray400} 
+            name={icon} 
+          />
+        </View>
         <Text style={[
           styles.label, 
-          { color: focused ? colors.active : colors.inactive }
+          { color: focused ? COLORS.berryRed : COLORS.gray400 }
         ]}>
           {label}
         </Text>
@@ -67,33 +68,20 @@ export default function CustomTabBar({ state, navigation }: BottomTabBarProps) {
 
   return (
     <View style={styles.wrapper}>
-      <BlurView 
-        intensity={80} 
-        tint={isDark ? 'dark' : 'light'} 
-        style={StyleSheet.flatten([styles.bar, { borderTopColor: colors.border, backgroundColor: colors.background }])}
-      >
-        <TabItem name="index" icon="grid-view" label="INÍCIO" />
-        <TabItem name="progress" icon="bar-chart" label="STATUS" />
+      {/* Tab Navigation Pill */}
+      <View style={styles.tabPill}>
+        <TabItem name="index" icon="home" label="Início" />
+        <TabItem name="progress" icon="bar-chart" label="Progresso" />
+        <TabItem name="recipes" icon="group" label="Grupos" />
+        <TabItem name="meals" icon="person" label="Perfil" />
+      </View>
 
-        {/* Central Button Space */}
-        <View style={styles.centerSpace} />
-
-        {/* Using 'recipes' as placeholder for Social and 'meals' for Profile since we don't have those routes yet, 
-            or we can just use existing routes but label them differently to match design */}
-        <TabItem name="recipes" icon="group" label="SOCIAL" />
-        <TabItem name="meals" icon="person" label="PERFIL" />
-      </BlurView>
-
+      {/* Camera FAB */}
       <Pressable 
-        style={StyleSheet.flatten([
-          styles.fab, 
-          { 
-            backgroundColor: colors.fabBg, 
-          }
-        ])} 
+        style={styles.fab}
         onPress={onScanPress}
       >
-        <MaterialIcons size={32} color={colors.fabIcon} name="add" />
+        <MaterialIcons size={28} color="white" name="camera-alt" />
       </Pressable>
     </View>
   );
@@ -104,47 +92,61 @@ const styles = StyleSheet.create({
     position: Platform.OS === 'web' ? ('fixed' as any) : 'absolute',
     left: 0,
     right: 0,
-    bottom: 0,
+    bottom: 30, // Lifted up from bottom
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    gap: 16,
     zIndex: 100,
   },
-  bar: {
+  tabPill: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 32,
+    backgroundColor: COLORS.white,
+    borderRadius: 999, // Pill shape
     paddingVertical: 12,
-    borderTopWidth: 1,
-    width: '100%',
-    height: 90,
-    paddingBottom: 24, 
+    paddingHorizontal: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
+    height: 72,
   },
   item: {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
   },
-  label: {
-    fontSize: 9,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  centerSpace: {
-    width: 64,
-  },
-  fab: {
-    position: 'absolute',
-    top: -28, // Moved up to overlap
-    width: 64,
-    height: 64,
-    borderRadius: 24, // Squared rounded
+  iconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 8 },
+  },
+  activeIconContainer: {
+    backgroundColor: COLORS.berryRedLight,
+  },
+  label: {
+    fontSize: 10,
+    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold', 
+  },
+  fab: {
+    width: 72,
+    height: 72,
+    borderRadius: 36, // Circle
+    backgroundColor: COLORS.berryRed,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
     elevation: 8,
   },
 });

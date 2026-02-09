@@ -42,7 +42,7 @@ const QuizAddActivityScreen = () => {
         {/* Background Pattern (Simulated with simple view for now, or could use SVG pattern) */}
         <View style={styles.bgPattern} />
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} bounces={false} overScrollMode="never">
           <Text style={styles.title}>Adicionar ao diário?</Text>
 
           <View style={styles.mainProgressContainer}>

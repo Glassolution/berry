@@ -124,6 +124,8 @@ const QuizExerciseRoutineScreen = () => {
             style={styles.mainContent} 
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
+            bounces={false}
+            overScrollMode="never"
           >
             <View style={styles.titleSection}>
               <Text style={styles.title}>Qual o seu nível de atividade?</Text>

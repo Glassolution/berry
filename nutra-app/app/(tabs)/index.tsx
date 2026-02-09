@@ -1,325 +1,317 @@
-import { StyleSheet, Pressable, View, TextInput, ScrollView, ImageStyle, Dimensions } from 'react-native';
+import React from 'react';
+import { StyleSheet, Pressable, View, Text, ScrollView, Dimensions, StatusBar } from 'react-native';
 import { Image } from 'expo-image';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { MaterialIcons } from '@expo/vector-icons';
-import Svg, { Circle } from 'react-native-svg';
-
-import { ThemedText } from '@/components/themed-text';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { Link } from 'expo-router';
-import { useTheme } from '@/context/ThemeContext';
-import { useQuiz } from '@/src/context/QuizContext';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Circle } from 'react-native-svg';
+import { useAuth } from '@/src/context/AuthContext';
+import { useNutrition } from '@/src/context/NutritionContext';
 
+// Colors from Design
+const COLORS = {
+  berryRed: "#ee2b5b",
+  berryOrange: "#FF8C42",
+  berryBg: "#FFFFFF",
+  berryCard: "#FDFDFD",
+  gray900: "#111827",
+  gray700: "#374151",
+  gray400: "#9CA3AF",
+  gray300: "#D1D5DB",
+  gray100: "#F3F4F6",
+  white: "#FFFFFF",
+  black: "#000000",
+  success: "#22C55E",
+};
+
+const { width } = Dimensions.get('window');
+
+// Original Data adapted to new visual style
 const CATEGORIES = [
-  { name: 'VEGANO', icon: 'spa' },
-  { name: 'CARBOS', icon: 'bakery-dining' },
-  { name: 'PROTEÍNA', icon: 'dinner-dining' }, // meal_dinner -> dinner-dining
-  { name: 'LANCHES', icon: 'fastfood' },
-  { name: 'BEBIDAS', icon: 'local-cafe' },
+  { id: 1, name: 'VEGANO', icon: 'spa', color: '#FECDD3' }, // red-100
+  { id: 2, name: 'CARBOS', icon: 'bakery-dining', color: '#FFEDD5' }, // orange-100
+  { id: 3, name: 'PROTEÍNA', icon: 'dinner-dining', color: '#F3F4F6' }, // gray-100
+  { id: 4, name: 'LANCHES', icon: 'fastfood', color: '#F3F4F6' },
+  { id: 5, name: 'BEBIDAS', icon: 'local-cafe', color: '#F3F4F6' },
 ];
 
 const RECENTS = [
   { 
-    name: 'Salmão Grelhado', 
-    kcal: '550 kcal', 
-    time: '12:37', 
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDykt7xFUAhYvZZKQsQ4uBlQtJDsXYo-YrUCk-4kUO7BjD9E21BHtpFqY4xTSR0V2slm2GKA40UEcPMXhIL-mxs8GghmT2ZDUzwo8b-qRqJvmreFJI9SBGM65qv1AMBsWKujEs_KYshZWKO3ylE4kB8hKxddXHK6Yw4cbGHMyR_nnmOsAfo5-emF_kBPmnkUhnGUEtEfr-ldjFVBsQxpScyU3kQzi9kOkTHCK7GtJQwHSCFWUXnEgk3ClJT5lffkYxgV8RDnjv84bMG' 
+    id: 1,
+    title: 'Salmão Grelhado', 
+    subtitle: '12:37',
+    kcal: 550, 
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDykt7xFUAhYvZZKQsQ4uBlQtJDsXYo-YrUCk-4kUO7BjD9E21BHtpFqY4xTSR0V2slm2GKA40UEcPMXhIL-mxs8GghmT2ZDUzwo8b-qRqJvmreFJI9SBGM65qv1AMBsWKujEs_KYshZWKO3ylE4kB8hKxddXHK6Yw4cbGHMyR_nnmOsAfo5-emF_kBPmnkUhnGUEtEfr-ldjFVBsQxpScyU3kQzi9kOkTHCK7GtJQwHSCFWUXnEgk3ClJT5lffkYxgV8RDnjv84bMG',
+    tag: 'ALMOÇO' 
   },
   { 
-    name: 'Bowl Mediterrâneo', 
-    kcal: '320 kcal', 
-    time: '08:15', 
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDltbdqPy6JRGVD9R_HQQFccstHiCZqhCam-WJr6OWi5jjXAs_GsZi-58SCmIkJB0lmP1FfDEAn-wvoQtYb3hokXWb8GNPrZD9AIf5z3BDFNkOeb41TiH8xMirrg81mSEYZEnwchsFL-tdlPpXn7eGLU4UAMcszenXUoRKErJ1S9uALoB9BM4iEsZ66foNqY8GH_QwKQwXgypX3OKpVTqRioZ72cOJaTJVP-P4PJBWOySITCw8wiZUbR9sI0xf4xFNWj1iDLpX1A1OU' 
+    id: 2,
+    title: 'Bowl Mediterrâneo', 
+    subtitle: '08:15',
+    kcal: 320, 
+    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDltbdqPy6JRGVD9R_HQQFccstHiCZqhCam-WJr6OWi5jjXAs_GsZi-58SCmIkJB0lmP1FfDEAn-wvoQtYb3hokXWb8GNPrZD9AIf5z3BDFNkOeb41TiH8xMirrg81mSEYZEnwchsFL-tdlPpXn7eGLU4UAMcszenXUoRKErJ1S9uALoB9BM4iEsZ66foNqY8GH_QwKQwXgypX3OKpVTqRioZ72cOJaTJVP-P4PJBWOySITCw8wiZUbR9sI0xf4xFNWj1iDLpX1A1OU',
+    tag: 'CAFÉ' 
   },
 ];
 
-export default function HomeScreen() {
-  const { theme } = useTheme();
-  const { quizData } = useQuiz();
-  const isDark = theme === 'dark';
+export default function DashboardScreen() {
+  const { session } = useAuth();
+  const { 
+    targetCalories, 
+    remainingCalories, 
+    consumedCalories, 
+    consumedMacros, 
+    addMeal 
+  } = useNutrition();
 
-  // Calculate Daily Calories (TDEE)
-  const calculateTDEE = () => {
-    // Mifflin-St Jeor Equation
-    // Men: 10W + 6.25H - 5A + 5
-    // Women: 10W + 6.25H - 5A - 161
-    const { gender, weight, height, age, activityLevel } = quizData;
+  // Progress (Visualizes Consumed Calories)
+  const progress = Math.max(0, Math.min(consumedCalories / targetCalories, 1));
+  const circumference = 2 * Math.PI * 40;
+  const strokeDashoffset = circumference * (1 - progress);
+
+  const userName = session?.user?.user_metadata?.full_name?.split(' ')[0] || "Floyd"; 
+
+  const handleQuickAdd = (meal: typeof RECENTS[0]) => {
+    // Add simple mock macros for these quick adds since we don't have full data
+    // Approximating: Protein = 25%, Carbs = 45%, Fat = 30%
+    const p = Math.round((meal.kcal * 0.25) / 4);
+    const c = Math.round((meal.kcal * 0.45) / 4);
+    const f = Math.round((meal.kcal * 0.30) / 9);
     
-    let bmr = (10 * weight) + (6.25 * height) - (5 * age);
-    bmr += gender === 'homem' ? 5 : -161;
-
-    const activityMultipliers = {
-      sedentary: 1.2,
-      light: 1.375,
-      moderate: 1.55,
-      active: 1.725,
-      very_active: 1.9,
-    };
-
-    return Math.round(bmr * (activityMultipliers[activityLevel] || 1.2));
+    addMeal(meal.title, meal.kcal, { protein: p, carbs: c, fats: f });
   };
-
-  const activePlan = (quizData as any).activeDietPlan as any;
-  const targetCalories = typeof activePlan?.calories === 'number' ? activePlan.calories : calculateTDEE();
-  // Assume 0 consumed for now
-  const consumedCalories = 0; 
-  const remainingCalories = targetCalories - consumedCalories;
-  
-  // Calculate Macros (30% P, 40% C, 30% F)
-  const proteinGrams = typeof activePlan?.macros?.protein === 'number' ? activePlan.macros.protein : Math.round((targetCalories * 0.3) / 4);
-  const carbsGrams = typeof activePlan?.macros?.carbs === 'number' ? activePlan.macros.carbs : Math.round((targetCalories * 0.4) / 4);
-  const fatGrams = typeof activePlan?.macros?.fats === 'number' ? activePlan.macros.fats : Math.round((targetCalories * 0.3) / 9);
-
-  const colors = {
-    background: isDark ? '#0A0A0A' : '#FFFFFF',
-    text: isDark ? '#FFFFFF' : '#111827', // gray-900
-    textSecondary: isDark ? '#A1A1AA' : '#9CA3AF', // gray-400
-    card: isDark ? '#161616' : '#F8F8F8',
-    border: isDark ? '#27272a' : '#f3f4f6', // gray-100/zinc-800
-    primary: isDark ? '#FFFFFF' : '#000000',
-    primaryForeground: isDark ? '#000000' : '#FFFFFF',
-    accent: '#FF4D8D',
-  };
+ 
 
   return (
-    <SafeAreaView style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
         
-        {/* Header */}
-        <View style={styles.headerRow}>
-          <View style={styles.userRow}>
-            <Link href="/meals" asChild>
-              <Pressable style={StyleSheet.flatten([styles.avatarContainer, { borderColor: isDark ? '#27272a' : '#f3f4f6' }])}>
-                <Image 
-                  source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA702fxZxwhXSBJzRRUZMTyGOjR5zeQsmNAaMFCpjMIwlfIEy_rwEqBEOPPHXos8jV2HKeZCQNRpuEFsP6OtGwvcFKmFiwOf9Gqo3qcy7hrcaT2WTLx_bmYhMujbND0iDkZjGR8ReTQxQcbmyt2oTKg28MgXc5ruzAwQtdk3tQQtg1o3TaOpC3RQ7f7zc6oKGQQfeqMF4-AmCMmsaC3WZGf8IRgwv_GJKRr_705JLdPgecSJf6mbJVXfwjzRPKa_EAcDKiF9IrgS6Et' }}
-                  style={styles.avatarImage as ImageStyle}
-                />
-              </Pressable>
-            </Link>
-            <View>
-              <ThemedText style={StyleSheet.flatten([styles.hello, { color: colors.textSecondary }])}>BEM-VINDO</ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.userName, { color: colors.text }])}>Floyd Miles</ThemedText>
-            </View>
-          </View>
-          <Link href="/modal" asChild>
-            <Pressable style={StyleSheet.flatten([styles.iconButton, { 
-              backgroundColor: isDark ? '#18181b' : '#ffffff',
-              borderColor: colors.border
-            }])}>
-              <MaterialIcons name="notifications-none" size={24} color={isDark ? '#d1d5db' : '#4b5563'} />
-            </Pressable>
-          </Link>
-        </View>
-
-        {/* Search & Assistant */}
-        <View style={styles.searchRow}>
-          <View style={StyleSheet.flatten([styles.searchBox, { 
-            backgroundColor: isDark ? '#18181b' : '#ffffff',
-            borderColor: colors.border
-          }])}>
-            <MaterialIcons name="search" size={24} color="#9ca3af" style={{ marginLeft: 16 }} />
-            <TextInput
-              placeholder="O que você comeu?"
-              placeholderTextColor="#9ca3af"
-              style={StyleSheet.flatten([styles.searchInput, { color: colors.text }])}
+        {/* HERO SECTION */}
+        <View style={styles.heroSection}>
+            <Image 
+                source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuDykt7xFUAhYvZZKQsQ4uBlQtJDsXYo-YrUCk-4kUO7BjD9E21BHtpFqY4xTSR0V2slm2GKA40UEcPMXhIL-mxs8GghmT2ZDUzwo8b-qRqJvmreFJI9SBGM65qv1AMBsWKujEs_KYshZWKO3ylE4kB8hKxddXHK6Yw4cbGHMyR_nnmOsAfo5-emF_kBPmnkUhnGUEtEfr-ldjFVBsQxpScyU3kQzi9kOkTHCK7GtJQwHSCFWUXnEgk3ClJT5lffkYxgV8RDnjv84bMG" }}
+                style={StyleSheet.absoluteFillObject}
+                contentFit="cover"
             />
-          </View>
-          <Pressable style={StyleSheet.flatten([styles.assistantButton, { backgroundColor: colors.primary }])}>
-            <MaterialIcons name="auto-awesome" size={24} color={colors.primaryForeground} />
-          </Pressable>
-        </View>
-
-        {/* Calories Stats */}
-        <View style={styles.statsSection}>
-          <View style={styles.statsInfo}>
-            <View style={styles.statsValueRow}>
-              <ThemedText style={StyleSheet.flatten([styles.statsValue, { color: colors.text }])}>{remainingCalories}</ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.statsTarget, { color: colors.textSecondary }])}>/ {targetCalories}</ThemedText>
-            </View>
-            <ThemedText style={StyleSheet.flatten([styles.statsLabel, { color: colors.textSecondary }])}>KCAL RESTANTES HOJE</ThemedText>
-          </View>
-          
-          <View style={styles.chartContainer}>
-            <Svg width={128} height={128} viewBox="0 0 100 100" style={{ transform: [{ rotate: '-90deg' }] }}>
-              <Circle
-                cx="50"
-                cy="50"
-                r="44"
-                stroke={isDark ? '#27272a' : '#f3f4f6'}
-                strokeWidth="5"
-                fill="transparent"
-              />
-              <Circle
-                cx="50"
-                cy="50"
-                r="44"
-                stroke={colors.primary}
-                strokeWidth="7"
-                strokeDasharray={276.46}
-                strokeDashoffset={138.23}
-                strokeLinecap="round"
-                fill="transparent"
-              />
-            </Svg>
-            <View style={styles.chartIconContainer}>
-              <MaterialIcons name="local-fire-department" size={32} color={colors.primary} />
-            </View>
-          </View>
-        </View>
-
-        {/* Macro Cards */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.macroList} style={{ marginHorizontal: -24, paddingHorizontal: 24, marginBottom: 40 }}>
-          {/* Protein */}
-          <View style={StyleSheet.flatten([styles.macroCard, { backgroundColor: colors.card, borderColor: colors.border }])}>
-            <View style={styles.macroChartContainer}>
-               <Svg width={56} height={56} viewBox="0 0 100 100" style={{ transform: [{ rotate: '-90deg' }] }}>
-                <Circle cx="50" cy="50" r="42" stroke={isDark ? '#27272a' : '#f3f4f6'} strokeWidth="4" fill="transparent" />
-                <Circle cx="50" cy="50" r="42" stroke={colors.primary} strokeWidth="6" strokeDasharray={263.89} strokeDashoffset={131.9} strokeLinecap="round" fill="transparent" />
-              </Svg>
-              <View style={styles.macroIconOverlay}>
-                <MaterialIcons name="kebab-dining" size={20} color={colors.text} style={{ opacity: 0.4 }} />
-              </View>
-            </View>
-            <ThemedText style={StyleSheet.flatten([styles.macroLabel, { color: colors.textSecondary }])}>PROTEÍNA</ThemedText>
-            <ThemedText style={StyleSheet.flatten([styles.macroValue, { color: colors.text }])}>{proteinGrams}g</ThemedText>
-          </View>
-
-          {/* Carbs */}
-          <View style={StyleSheet.flatten([styles.macroCard, { backgroundColor: colors.card, borderColor: colors.border }])}>
-            <View style={styles.macroChartContainer}>
-               <Svg width={56} height={56} viewBox="0 0 100 100" style={{ transform: [{ rotate: '-90deg' }] }}>
-                <Circle cx="50" cy="50" r="42" stroke={isDark ? '#27272a' : '#f3f4f6'} strokeWidth="4" fill="transparent" />
-                <Circle cx="50" cy="50" r="42" stroke={colors.primary} strokeWidth="6" strokeDasharray={263.89} strokeDashoffset={100.2} strokeLinecap="round" fill="transparent" />
-              </Svg>
-              <View style={styles.macroIconOverlay}>
-                <MaterialIcons name="grass" size={20} color={colors.text} style={{ opacity: 0.4 }} />
-              </View>
-            </View>
-            <ThemedText style={StyleSheet.flatten([styles.macroLabel, { color: colors.textSecondary }])}>CARBOS</ThemedText>
-            <ThemedText style={StyleSheet.flatten([styles.macroValue, { color: colors.text }])}>{carbsGrams}g</ThemedText>
-          </View>
-
-          {/* Fat */}
-          <View style={StyleSheet.flatten([styles.macroCard, { backgroundColor: colors.card, borderColor: colors.border }])}>
-            <View style={styles.macroChartContainer}>
-               <Svg width={56} height={56} viewBox="0 0 100 100" style={{ transform: [{ rotate: '-90deg' }] }}>
-                <Circle cx="50" cy="50" r="42" stroke={isDark ? '#27272a' : '#f3f4f6'} strokeWidth="4" fill="transparent" />
-                <Circle cx="50" cy="50" r="42" stroke={colors.primary} strokeWidth="6" strokeDasharray={263.89} strokeDashoffset={184.7} strokeLinecap="round" fill="transparent" />
-              </Svg>
-              <View style={styles.macroIconOverlay}>
-                <MaterialIcons name="spa" size={20} color={colors.text} style={{ opacity: 0.4 }} />
-              </View>
-            </View>
-            <ThemedText style={StyleSheet.flatten([styles.macroLabel, { color: colors.textSecondary }])}>GORDURA</ThemedText>
-            <ThemedText style={StyleSheet.flatten([styles.macroValue, { color: colors.text }])}>{fatGrams}g</ThemedText>
-          </View>
-        </ScrollView>
-
-        {/* Minha Dieta */}
-        <View style={styles.sectionContainer}>
-          <Link href="/diet" asChild>
-            <Pressable style={StyleSheet.flatten([styles.dietCard, { backgroundColor: colors.card, borderColor: colors.border }])}>
-              <View style={styles.dietCardLeft}>
-                <View style={StyleSheet.flatten([styles.dietIcon, { backgroundColor: isDark ? '#18181b' : '#ffffff', borderColor: colors.border }])}>
-                  <MaterialIcons name="restaurant-menu" size={22} color={colors.text} />
-                </View>
-                <View style={{ gap: 2 }}>
-                  <ThemedText style={StyleSheet.flatten([styles.dietTitle, { color: colors.text }])}>Minha Dieta</ThemedText>
-                  <ThemedText style={StyleSheet.flatten([styles.dietSubtitle, { color: colors.textSecondary }])}>
-                    {activePlan ? 'Plano ativo pronto' : 'Gerar plano ativo'}
-                  </ThemedText>
-                </View>
-              </View>
-              <MaterialIcons name="chevron-right" size={24} color={colors.textSecondary} />
-            </Pressable>
-          </Link>
-        </View>
-
-        {/* Categories */}
-        <View style={styles.categoriesSection}>
-          <View style={styles.sectionHeader}>
-            <ThemedText style={StyleSheet.flatten([styles.sectionTitle, { color: colors.text }])}>CATEGORIAS</ThemedText>
-            <Pressable>
-              <ThemedText style={StyleSheet.flatten([styles.seeAllText, { color: colors.textSecondary }])}>VER TUDO</ThemedText>
-            </Pressable>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesList} style={{ marginHorizontal: -24, paddingHorizontal: 24 }}>
-            {CATEGORIES.map((cat, index) => (
-              <View key={index} style={styles.categoryItem}>
-                <View style={StyleSheet.flatten([styles.categoryIcon, { 
-                  backgroundColor: isDark ? '#18181b' : '#ffffff', 
-                  borderColor: colors.border 
-                }])}>
-                  <MaterialIcons name={cat.icon as any} size={32} color={colors.text} />
-                </View>
-                <ThemedText style={StyleSheet.flatten([styles.categoryName, { color: colors.text }])}>{cat.name}</ThemedText>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Berry Insights */}
-        <View style={styles.sectionContainer}>
-          <View style={StyleSheet.flatten([styles.insightCard, { backgroundColor: colors.card, borderColor: colors.border }])}>
-            <View style={styles.insightIconPos}>
-               <MaterialIcons name="auto-awesome" size={24} color={colors.text} style={{ opacity: 0.2 }} />
-            </View>
-            <ThemedText style={StyleSheet.flatten([styles.insightLabel, { color: colors.textSecondary }])}>BERRY INSIGHTS</ThemedText>
-            <ThemedText style={StyleSheet.flatten([styles.insightText, { color: isDark ? '#e4e4e7' : '#27272a' }])}>
-              Sua ingestão de <ThemedText style={{ fontWeight: 'bold', color: colors.text, textDecorationLine: 'underline', textDecorationColor: 'rgba(255, 77, 141, 0.3)' }}>proteínas está 30% maior</ThemedText>. Excelente ritmo para recuperação muscular.
-            </ThemedText>
-          </View>
-        </View>
-
-        {/* Recentes */}
-        <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeader}>
-            <ThemedText style={StyleSheet.flatten([styles.sectionTitle, { color: colors.text }])}>RECENTES</ThemedText>
-            <Pressable>
-              <ThemedText style={StyleSheet.flatten([styles.seeAllText, { color: colors.textSecondary }])}>VER TUDO</ThemedText>
-            </Pressable>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recentList} style={{ marginHorizontal: -24, paddingHorizontal: 24 }}>
-             {RECENTS.map((item, index) => (
-                <View key={index} style={StyleSheet.flatten([styles.recentCard, { backgroundColor: colors.card, borderColor: colors.border }])}>
-                  <View style={styles.recentImageContainer}>
-                     <Image source={{ uri: item.image }} style={styles.recentImage} />
-                     <View style={StyleSheet.flatten([styles.timeTag, { backgroundColor: isDark ? 'rgba(0,0,0,0.9)' : 'rgba(255,255,255,0.9)' }])}>
-                       <ThemedText style={StyleSheet.flatten([styles.timeText, { color: colors.text }])}>{item.time}</ThemedText>
-                     </View>
-                  </View>
-                  <View style={styles.recentContent}>
-                    <ThemedText style={StyleSheet.flatten([styles.recentTitle, { color: colors.text }])}>{item.name}</ThemedText>
-                    <View style={styles.recentMeta}>
-                      <View style={StyleSheet.flatten([styles.dot, { backgroundColor: colors.accent }])} />
-                      <ThemedText style={StyleSheet.flatten([styles.recentKcal, { color: colors.textSecondary }])}>{item.kcal}</ThemedText>
+            {/* Gradient Overlay */}
+            <LinearGradient
+                colors={['rgba(0,0,0,0.6)', 'transparent', 'transparent', 'rgba(0,0,0,0.9)']}
+                locations={[0, 0.3, 0.6, 1]}
+                style={StyleSheet.absoluteFillObject}
+            />
+            
+            {/* Header Overlay */}
+            <SafeAreaView style={styles.headerOverlay} edges={['top']}>
+                <View style={styles.headerContent}>
+                    <View style={styles.userRow}>
+                         <Link href="/(tabs)/meals" asChild>
+                            <Pressable style={styles.avatarContainer}>
+                                <Image 
+                                    source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuA702fxZxwhXSBJzRRUZMTyGOjR5zeQsmNAaMFCpjMIwlfIEy_rwEqBEOPPHXos8jV2HKeZCQNRpuEFsP6OtGwvcFKmFiwOf9Gqo3qcy7hrcaT2WTLx_bmYhMujbND0iDkZjGR8ReTQxQcbmyt2oTKg28MgXc5ruzAwQtdk3tQQtg1o3TaOpC3RQ7f7zc6oKGQQfeqMF4-AmCMmsaC3WZGf8IRgwv_GJKRr_705JLdPgecSJf6mbJVXfwjzRPKa_EAcDKiF9IrgS6Et" }}
+                                    style={styles.avatarImage}
+                                    contentFit="cover"
+                                />
+                            </Pressable>
+                         </Link>
+                         <View>
+                             <Text style={styles.greetingText}>Olá, {userName}</Text>
+                             <Text style={styles.subGreetingText}>Foco na meta! ⚡</Text>
+                         </View>
                     </View>
-                  </View>
+                    <Pressable style={styles.searchButton}>
+                        <MaterialIcons name="search" size={24} color="white" />
+                    </Pressable>
                 </View>
-             ))}
-          </ScrollView>
+            </SafeAreaView>
+
+            {/* Bottom Hero Content */}
+            <View style={styles.heroBottomContent}>
+                <View style={styles.badge}>
+                    <Text style={styles.badgeText}>PRATO DO DIA</Text>
+                </View>
+                <Text style={styles.dishTitle}>Bowl de Quinoa e Salmão</Text>
+                <View style={styles.dishMeta}>
+                    <View style={styles.metaItem}>
+                        <MaterialIcons name="timer" size={16} color={COLORS.berryRed} />
+                        <Text style={styles.metaText}>20 min</Text>
+                    </View>
+                    <View style={styles.metaItem}>
+                        <MaterialIcons name="local-fire-department" size={16} color={COLORS.berryRed} />
+                        <Text style={styles.metaText}>480 kcal</Text>
+                    </View>
+                </View>
+            </View>
         </View>
 
-        {/* Bottom spacing for TabBar */}
-        <View style={{ height: 85 }} />
+        {/* STATS SECTION */}
+        <View style={styles.statsSection}>
+             <View style={styles.statsCard}>
+                 <View style={styles.statsHeader}>
+                     <View style={styles.statsTextContainer}>
+                         <View style={styles.kcalRow}>
+                             <Text style={styles.kcalValue}>{consumedCalories}</Text>
+                             <Text style={styles.kcalTarget}>/ {targetCalories}</Text>
+                         </View>
+                         <Text style={styles.kcalLabel}>KCAL CONSUMIDAS</Text>
+                     </View>
+                     
+                     {/* Circular Chart */}
+                     <View style={styles.chartContainer}>
+                         <Svg height="96" width="96" viewBox="0 0 96 96">
+                             <Circle cx="48" cy="48" r="40" stroke={COLORS.gray100} strokeWidth="8" fill="transparent" />
+                             <Circle 
+                                cx="48" 
+                                cy="48" 
+                                r="40" 
+                                stroke={COLORS.berryRed} 
+                                strokeWidth="8" 
+                                fill="transparent" 
+                                strokeDasharray={`${2 * Math.PI * 40}`} 
+                                strokeDashoffset={`${strokeDashoffset}`}
+                                strokeLinecap="round" 
+                                transform="rotate(-90 48 48)" 
+                             />
+                         </Svg>
+                         <View style={styles.chartIcon}>
+                             <MaterialIcons name="local-fire-department" size={24} color={COLORS.berryRed} />
+                         </View>
+                     </View>
+                 </View>
+                 
+                 <View style={styles.separator} />
+                 
+                 <View style={styles.macrosRow}>
+                     <View style={styles.macroItem}>
+                         <View style={[styles.dot, { backgroundColor: COLORS.berryRed }]} />
+                         <Text style={styles.macroText}>{consumedMacros.protein}g Prot</Text>
+                     </View>
+                     <View style={styles.macroItem}>
+                         <View style={[styles.dot, { backgroundColor: COLORS.berryOrange }]} />
+                         <Text style={styles.macroText}>{consumedMacros.carbs}g Carb</Text>
+                     </View>
+                     <View style={styles.macroItem}>
+                         <View style={[styles.dot, { backgroundColor: COLORS.gray300 }]} />
+                         <Text style={styles.macroText}>{consumedMacros.fats}g Gord</Text>
+                     </View>
+                 </View>
+             </View>
+        </View>
+
+        {/* AI INSIGHTS */}
+        <View style={styles.insightsSection}>
+            <View style={styles.insightCard}>
+                <View style={styles.insightIconBox}>
+                    <MaterialIcons name="auto-awesome" size={24} color="white" />
+                </View>
+                <View style={styles.insightContent}>
+                    <Text style={styles.insightTitle}>INSIGHTS DA IA</Text>
+                    <Text style={styles.insightText}>
+                        Você está consumindo <Text style={{fontWeight: 'bold'}}>30% mais proteínas</Text> que o normal. Ótimo para sua recuperação muscular hoje!
+                    </Text>
+                </View>
+            </View>
+        </View>
+
+        {/* RECENTES (Adapted from Inspired for you) */}
+        <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>RECENTES</Text>
+                <Pressable>
+                    <Text style={styles.seeAllText}>VER TUDO</Text>
+                </Pressable>
+            </View>
+            
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
+                {RECENTS.map((meal) => (
+                    <View key={meal.id} style={styles.mealCard}>
+                        <View style={styles.mealImageContainer}>
+                            <Image source={{ uri: meal.image }} style={styles.mealImage} contentFit="cover" />
+                            {meal.tag && (
+                                <View style={styles.tagBadge}>
+                                    <Text style={styles.tagText}>{meal.tag}</Text>
+                                </View>
+                            )}
+                        </View>
+                        <View style={styles.mealContent}>
+                            <Text style={styles.mealTitle} numberOfLines={1}>{meal.title}</Text>
+                            <Text style={styles.mealSubtitle} numberOfLines={1}>{meal.subtitle}</Text>
+                            
+                            <View style={styles.mealFooter}>
+                                <Text style={styles.mealKcal}>{meal.kcal} kcal</Text>
+                                <Pressable 
+                                  style={styles.addButton}
+                                  onPress={() => handleQuickAdd(meal)}
+                                >
+                                    <MaterialIcons name="add" size={20} color={COLORS.gray900} />
+                                </Pressable>
+                            </View>
+                        </View>
+                    </View>
+                ))}
+            </ScrollView>
+        </View>
+
+        {/* CATEGORIES */}
+        <View style={[styles.sectionContainer, { paddingBottom: 120 }]}>
+            <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>CATEGORIAS</Text>
+            </View>
+            
+            <View style={styles.categoriesRow}>
+                {CATEGORIES.map((cat) => (
+                    <View key={cat.id} style={styles.categoryItem}>
+                        <View style={[styles.categoryIcon, { backgroundColor: cat.color }]}>
+                            {cat.icon === 'bakery-dining' || cat.icon === 'dinner-dining' || cat.icon === 'spa' || cat.icon === 'local-cafe' || cat.icon === 'fastfood' ? (
+                                <MaterialIcons name={cat.icon as any} size={24} color={COLORS.berryRed} />
+                            ) : (
+                                <MaterialIcons name={cat.icon as any} size={24} color={COLORS.berryRed} />
+                            )}
+                        </View>
+                        <Text style={styles.categoryLabel}>{cat.name}</Text>
+                    </View>
+                ))}
+            </View>
+        </View>
 
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.berryBg,
   },
   scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
+    paddingBottom: 20,
   },
-  headerRow: {
+  heroSection: {
+    height: 320, 
+    width: '100%',
+    position: 'relative',
+    justifyContent: 'flex-end',
+  },
+  headerOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 40,
+    paddingHorizontal: 24,
+    paddingTop: 12,
   },
   userRow: {
     flexDirection: 'row',
@@ -327,326 +319,337 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   avatarContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 9999,
-    overflow: 'hidden',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     borderWidth: 2,
-    borderColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    borderColor: 'rgba(255,255,255,0.8)',
+    overflow: 'hidden',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
   avatarImage: {
     width: '100%',
     height: '100%',
   },
-  hello: {
+  greetingText: {
+    color: 'rgba(255,255,255,0.8)',
     fontSize: 10,
-    fontWeight: 'bold',
+    fontFamily: 'Manrope_700Bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  subGreetingText: {
+    color: COLORS.white,
+    fontSize: 14,
+    fontFamily: 'Manrope_800ExtraBold',
+  },
+  searchButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
+  heroBottomContent: {
+    padding: 24,
+    paddingBottom: 40, 
+  },
+  badge: {
+    backgroundColor: COLORS.berryOrange,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 999,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  badgeText: {
+    color: COLORS.white,
+    fontSize: 10,
+    fontFamily: 'Manrope_800ExtraBold',
     textTransform: 'uppercase',
     letterSpacing: 1,
-    marginBottom: 2,
   },
-  userName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    lineHeight: 20,
-    letterSpacing: -0.5,
+  dishTitle: {
+    color: COLORS.white,
+    fontSize: 30,
+    fontFamily: 'Manrope_800ExtraBold',
+    lineHeight: 36,
+    marginBottom: 12,
   },
-  iconButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 40,
-  },
-  searchBox: {
-    flex: 1,
+  dishMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    gap: 16,
   },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    marginLeft: 12,
-    marginRight: 16,
-    height: '100%',
-  },
-  assistantButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sectionContainer: {
-    marginBottom: 40,
-  },
-  dietCard: {
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 14,
+  metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
+    gap: 4,
   },
-  dietCardLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  dietIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dietTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  dietSubtitle: {
+  metaText: {
+    color: 'rgba(255,255,255,0.9)',
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'Manrope_700Bold',
   },
   statsSection: {
+    paddingHorizontal: 24,
+    marginTop: -30, 
+    zIndex: 10,
+  },
+  statsCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 24, 
+    padding: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.05,
+    shadowRadius: 20,
+    elevation: 10,
+    borderWidth: 1,
+    borderColor: COLORS.gray100,
+  },
+  statsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 40,
-    paddingHorizontal: 8,
   },
-  statsInfo: {
-    flex: 1,
+  statsTextContainer: {
+    flexDirection: 'column',
   },
-  statsValueRow: {
+  kcalRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 4,
-    marginBottom: 8,
   },
-  statsValue: {
-    fontSize: 60,
-    fontWeight: '900',
+  kcalValue: {
+    fontSize: 48,
+    fontFamily: 'Manrope_800ExtraBold',
+    color: COLORS.berryRed,
     letterSpacing: -2,
-    lineHeight: 64,
+    lineHeight: 56,
   },
-  statsTarget: {
-    fontSize: 20,
-    fontWeight: '500',
+  kcalTarget: {
+    fontSize: 24,
+    fontFamily: 'Manrope_700Bold',
+    color: COLORS.gray300,
   },
-  statsLabel: {
+  kcalLabel: {
     fontSize: 10,
-    fontWeight: '900',
+    fontFamily: 'Manrope_800ExtraBold',
+    color: COLORS.gray400,
     textTransform: 'uppercase',
     letterSpacing: 2,
+    marginTop: 4,
   },
   chartContainer: {
-    position: 'relative',
-    width: 128,
-    height: 128,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  chartIconContainer: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  macroList: {
-    gap: 16,
-  },
-  macroCard: {
-    minWidth: 120,
-    padding: 20,
-    borderRadius: 32,
-    borderWidth: 1,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-    gap: 8,
-  },
-  macroChartContainer: {
-    width: 56,
-    height: 56,
+    width: 96,
+    height: 96,
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
   },
-  macroIconOverlay: {
+  chartIcon: {
     position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  macroLabel: {
-    fontSize: 9,
-    fontWeight: '900',
+  separator: {
+    height: 1,
+    backgroundColor: '#F9FAFB', 
+    marginVertical: 20,
+  },
+  macrosRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  macroItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  macroText: {
+    fontSize: 10,
+    fontFamily: 'Manrope_700Bold',
+    color: COLORS.gray400,
     textTransform: 'uppercase',
     letterSpacing: 1,
-    marginBottom: 1,
   },
-  macroValue: {
+  insightsSection: {
+    paddingHorizontal: 24,
+    marginTop: 24,
+  },
+  insightCard: {
+    backgroundColor: 'rgba(238, 43, 91, 0.05)', 
+    borderRadius: 24,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(238, 43, 91, 0.1)',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+  },
+  insightIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 16,
+    backgroundColor: COLORS.berryRed,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: COLORS.berryRed,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  insightContent: {
+    flex: 1,
+  },
+  insightTitle: {
+    fontSize: 12,
+    fontFamily: 'Manrope_800ExtraBold',
+    color: COLORS.berryRed,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 4,
+  },
+  insightText: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontFamily: 'Manrope_500Medium',
+    color: COLORS.gray700,
+    lineHeight: 20,
   },
-  categoriesSection: {
-    marginBottom: 48,
+  sectionContainer: {
+    marginTop: 32,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 32,
-    paddingHorizontal: 8,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-    letterSpacing: -0.5,
-  },
-  seeAllText: {
-    fontSize: 10,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-    letterSpacing: 2,
-  },
-  categoriesList: {
-    gap: 32,
-  },
-  categoryItem: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 16,
-    minWidth: 85,
-  },
-  categoryIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  categoryName: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
-  },
-  insightCard: {
-    padding: 24,
-    borderRadius: 32,
-    borderWidth: 1,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  insightIconPos: {
-    position: 'absolute',
-    top: 24,
-    right: 24,
-  },
-  insightLabel: {
-    fontSize: 10,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-    letterSpacing: 2,
+    paddingHorizontal: 24,
     marginBottom: 16,
   },
-  insightText: {
-    fontSize: 15,
-    fontWeight: '500',
-    lineHeight: 24,
-    paddingRight: 32,
+  sectionTitle: {
+    fontSize: 16,
+    fontFamily: 'Manrope_800ExtraBold',
+    color: COLORS.gray900,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  recentList: {
+  seeAllText: {
+    fontSize: 12,
+    fontFamily: 'Manrope_700Bold',
+    color: COLORS.gray400,
+  },
+  horizontalScroll: {
+    paddingHorizontal: 24,
     gap: 16,
   },
-  recentCard: {
-    width: 200,
-    borderRadius: 36,
-    borderWidth: 1,
+  mealCard: {
+    width: 220,
+    backgroundColor: COLORS.white,
+    borderRadius: 24,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: COLORS.gray100,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 4,
+    marginBottom: 8, // for shadow
   },
-  recentImageContainer: {
-    height: 160,
+  mealImageContainer: {
+    height: 140,
     position: 'relative',
   },
-  recentImage: {
+  mealImage: {
     width: '100%',
     height: '100%',
   },
-  timeTag: {
+  tagBadge: {
     position: 'absolute',
-    top: 16,
-    left: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 9999,
+    top: 12,
+    left: 12,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backdropFilter: 'blur(4px)',
   },
-  timeText: {
-    fontSize: 9,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
+  tagText: {
+    color: COLORS.white,
+    fontSize: 10,
+    fontFamily: 'Manrope_800ExtraBold',
   },
-  recentContent: {
-    padding: 20,
-    gap: 8,
+  mealContent: {
+    padding: 16,
   },
-  recentTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    letterSpacing: -0.5,
+  mealTitle: {
+    fontSize: 16,
+    fontFamily: 'Manrope_700Bold',
+    color: COLORS.gray900,
+    marginBottom: 4,
   },
-  recentMeta: {
+  mealSubtitle: {
+    fontSize: 12,
+    fontFamily: 'Manrope_500Medium',
+    color: COLORS.gray400,
+    marginBottom: 12,
+  },
+  mealFooter: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  mealKcal: {
+    fontSize: 14,
+    fontFamily: 'Manrope_800ExtraBold',
+    color: COLORS.berryRed,
+  },
+  addButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.gray100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoriesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+  },
+  categoryItem: {
     alignItems: 'center',
     gap: 8,
   },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  categoryIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
   },
-  recentKcal: {
+  categoryLabel: {
     fontSize: 10,
-    fontWeight: '900',
+    fontFamily: 'Manrope_700Bold',
+    color: COLORS.gray400,
     textTransform: 'uppercase',
-    letterSpacing: 1.5,
   },
 });

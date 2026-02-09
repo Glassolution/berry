@@ -11,6 +11,7 @@ import { PlayfairDisplay_400Regular, PlayfairDisplay_700Bold } from '@expo-googl
 
 import { AppThemeProvider, useTheme } from '@/context/ThemeContext';
 import { QuizProvider } from '@/src/context/QuizContext';
+import { NutritionProvider } from '@/src/context/NutritionContext';
 import { AuthProvider, useAuth } from '@/src/context/AuthContext';
 import { useQuiz } from '@/src/context/QuizContext';
 import { supabase } from '@/src/lib/supabase';
@@ -210,7 +211,9 @@ export default function RootLayout() {
     <AppThemeProvider>
       <AuthProvider>
         <QuizProvider>
-          <RootLayoutNav />
+          <NutritionProvider>
+            <RootLayoutNav />
+          </NutritionProvider>
         </QuizProvider>
       </AuthProvider>
     </AppThemeProvider>

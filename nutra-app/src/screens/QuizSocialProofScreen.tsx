@@ -83,6 +83,8 @@ const QuizSocialProofScreen = () => {
         <ScrollView 
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
+            bounces={false}
+            overScrollMode="never"
         >
             <Animated.View style={{ opacity: fadeAnim, alignItems: 'center' }}>
                 

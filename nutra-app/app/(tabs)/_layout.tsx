@@ -19,7 +19,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="meals"
         options={{
-          title: 'Refeições',
+          title: 'Perfil',
         }}
       />
       <Tabs.Screen

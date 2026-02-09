@@ -1,317 +1,297 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView, Pressable, TextInput, Image, ImageStyle, Switch } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { ThemedText } from '@/components/themed-text';
-import { useTheme } from '@/context/ThemeContext';
+import { StyleSheet, Pressable, View, Text, ScrollView, Dimensions, StatusBar, Switch } from 'react-native';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import { useAuth } from '@/src/context/AuthContext';
+import { useQuiz } from '@/src/context/QuizContext';
+import { useNutrition } from '@/src/context/NutritionContext';
+import { useTheme } from '@/context/ThemeContext';
+import { calculateDietPlan } from '@/src/utils/nutritionCalculations';
+
+// Colors from Design (Matching Dashboard)
+const COLORS = {
+  berryRed: "#ee2b5b",
+  berryOrange: "#FF8C42",
+  berryBg: "#FFFFFF",
+  berryCard: "#FDFDFD",
+  gray900: "#111827",
+  gray700: "#374151",
+  gray400: "#9CA3AF",
+  gray300: "#D1D5DB",
+  gray100: "#F3F4F6",
+  white: "#FFFFFF",
+  black: "#000000",
+  success: "#22C55E",
+};
+
+const { width } = Dimensions.get('window');
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { signOut } = useAuth();
-  const { theme } = useTheme();
+  const { session, signOut } = useAuth();
+  const { quizData } = useQuiz();
+  const { theme, setTheme } = useTheme();
+  
   const isDark = theme === 'dark';
-  const [isDarkMode, setIsDarkMode] = useState(isDark);
-  const [selectedFruit, setSelectedFruit] = useState('strawberry');
+  const toggleTheme = () => setTheme(isDark ? 'light' : 'dark');
 
-  const colors = {
-    background: isDark ? '#0A0A0A' : '#FFFFFF',
-    text: isDark ? '#FFFFFF' : '#111827',
-    textSecondary: isDark ? '#A1A1AA' : '#9CA3AF', // gray-400
-    card: isDark ? '#161616' : '#F8F8F8',
-    border: isDark ? '#27272a' : '#f3f4f6', // gray-100/zinc-800
-    primary: isDark ? '#FFFFFF' : '#000000',
-    primaryForeground: isDark ? '#000000' : '#FFFFFF',
-    accent: '#FF4D8D',
-  };
+  // User Data
+  const userName = session?.user?.user_metadata?.full_name || "Floyd Miles";
+  
+  // Get Nutrition Data from Context
+  const { 
+    targetCalories, 
+    remainingCalories,
+    consumedCalories,
+    consumedMacros 
+  } = useNutrition();
+
+  // Calculate Diet Plan (For Metadata Labels)
+  const activePlan = (quizData as any).activeDietPlan;
+  
+  const calculatedPlan = activePlan || calculateDietPlan(
+    quizData.gender,
+    quizData.age,
+    quizData.height,
+    quizData.weight,
+    quizData.goalWeight,
+    quizData.activityLevel,
+    {
+      restrictions: (quizData as any).restrictions,
+      restrictionOtherText: (quizData as any).restrictionOtherText,
+      dietPreference: (quizData as any).dietPreference,
+      foodsLike: (quizData as any).foodsLike,
+      foodsDislike: (quizData as any).foodsDislike,
+      mealsPerDay: (quizData as any).mealsPerDay,
+      budget: (quizData as any).budget,
+    }
+  );
+
+  // Macros (Display Consumed)
+  const proteinGrams = consumedMacros.protein;
+  const carbsGrams = consumedMacros.carbs;
+  const fatGrams = consumedMacros.fats;
+
+  // Goal & Meta Info
+  const goalLabel = calculatedPlan.goalType === 'lose' ? 'Perda de Peso' : calculatedPlan.goalType === 'gain' ? 'Ganho de Massa' : 'Manter Peso';
+  const activityLabel = { sedentary: 'Sedentário', light: 'Leve', moderate: 'Moderado', active: 'Ativo', very_active: 'Muito Ativo' }[quizData.activityLevel as string] || 'Moderado';
+
+  // Progress (Visualizes Consumed Calories)
+  // Bar starts empty (0%) and fills as calories are consumed
+  const progress = Math.max(0, Math.min(consumedCalories / targetCalories, 1));
+  const circumference = 2 * Math.PI * 40;
+  const strokeDashoffset = circumference * (1 - progress);
 
   return (
-    <SafeAreaView style={StyleSheet.flatten([styles.container, { backgroundColor: colors.background }])} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.headerRow}>
-          <View style={styles.userRow}>
-            <View style={StyleSheet.flatten([styles.avatarContainer, { borderColor: isDark ? '#27272a' : '#f3f4f6' }])}>
-              <Image 
-                source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAFkXKqekglN6NYXK7weGZ0etF87-SjSQLWaf5_jRQpWlv9TBz6GMUohAUVXuGkO7IY7QmAoaQxY5Qg7xOoayL9PVJgQvWQF98JzLLdFubwnAc0EE8edyknq3-NDObQlQYQmzNRJNDIL5NuKFzTLhFbhnl1TeaZkpNi0eOVzqzwKIfp6dC11jZ6DzRtG3JQFJKmRm-ue38YKq23LWMQcz5iu9-AyiphEhjTuZxnTiQzV0YX5BeirddvRwicmSV4KKtbWYpAnuP9k3R7' }}
-                style={styles.avatarImage as ImageStyle}
-              />
-            </View>
-            <View>
-              <ThemedText style={StyleSheet.flatten([styles.hello, { color: colors.textSecondary }])}>BEM-VINDO</ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.userName, { color: colors.text }])}>Floyd Miles</ThemedText>
-            </View>
-          </View>
-          <Pressable style={StyleSheet.flatten([styles.iconButton, { 
-            borderColor: colors.border
-          }])}>
-            <MaterialIcons name="notifications-none" size={24} color={colors.textSecondary} />
-          </Pressable>
-        </View>
-
-        {/* Search & Assistant */}
-        <View style={styles.searchRow}>
-          <View style={StyleSheet.flatten([styles.searchBox, { 
-            backgroundColor: isDark ? '#18181b' : '#ffffff', // Not strictly following HTML bg-gray-50 but matching dark mode logic
-            borderColor: colors.border
-          }])}>
-            <MaterialIcons name="search" size={24} color="#9ca3af" style={{ marginLeft: 16 }} />
-            <TextInput
-              placeholder="O que você comeu?"
-              placeholderTextColor="#9ca3af"
-              style={StyleSheet.flatten([styles.searchInput, { color: colors.text }])}
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        
+        {/* HERO SECTION (Matches Dashboard) */}
+        <View style={styles.heroSection}>
+            <Image 
+                source={require('@/assets/images/prato 1.png')}
+                style={StyleSheet.absoluteFillObject}
+                contentFit="cover"
             />
-          </View>
-          <Pressable style={StyleSheet.flatten([styles.assistantButton, { backgroundColor: colors.primary }])}>
-            <MaterialIcons name="auto-awesome" size={24} color={colors.primaryForeground} />
-          </Pressable>
+            {/* Gradient Overlay */}
+            <LinearGradient
+                colors={['rgba(0,0,0,0.6)', 'transparent', 'transparent', 'rgba(0,0,0,0.9)']}
+                locations={[0, 0.3, 0.6, 1]}
+                style={StyleSheet.absoluteFillObject}
+            />
+            
+            {/* Header Overlay */}
+            <SafeAreaView style={styles.headerOverlay} edges={['top']}>
+                <View style={styles.headerContent}>
+                    <View style={styles.userRow}>
+                         <View style={styles.avatarContainer}>
+                             <Image 
+                                 source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuA702fxZxwhXSBJzRRUZMTyGOjR5zeQsmNAaMFCpjMIwlfIEy_rwEqBEOPPHXos8jV2HKeZCQNRpuEFsP6OtGwvcFKmFiwOf9Gqo3qcy7hrcaT2WTLx_bmYhMujbND0iDkZjGR8ReTQxQcbmyt2oTKg28MgXc5ruzAwQtdk3tQQtg1o3TaOpC3RQ7f7zc6oKGQQfeqMF4-AmCMmsaC3WZGf8IRgwv_GJKRr_705JLdPgecSJf6mbJVXfwjzRPKa_EAcDKiF9IrgS6Et" }}
+                                 style={styles.avatarImage}
+                                 contentFit="cover"
+                             />
+                         </View>
+                         <View>
+                             <Text style={styles.greetingText}>MEU PERFIL</Text>
+                             <Text style={styles.userName}>{userName}</Text>
+                         </View>
+                    </View>
+                    <Pressable style={styles.searchButton}>
+                        <MaterialIcons name="settings" size={24} color="white" />
+                    </Pressable>
+                </View>
+            </SafeAreaView>
+
+            {/* Bottom Hero Content */}
+            <View style={styles.heroBottomContent}>
+                <View style={styles.badge}>
+                    <Text style={styles.badgeText}>MEU PLANO</Text>
+                </View>
+                <Text style={styles.dishTitle}>Objetivo: {goalLabel}</Text>
+                <View style={styles.dishMeta}>
+                    <View style={styles.metaItem}>
+                        <MaterialIcons name="fitness-center" size={16} color={COLORS.berryRed} />
+                        <Text style={styles.metaText}>{activityLabel}</Text>
+                    </View>
+                    <View style={styles.metaItem}>
+                        <MaterialIcons name="track-changes" size={16} color={COLORS.berryRed} />
+                        <Text style={styles.metaText}>Meta: {quizData.goalWeight}kg</Text>
+                    </View>
+                </View>
+            </View>
         </View>
 
-        {/* Calories Stats */}
+        {/* STATS SECTION (Floating Card) */}
         <View style={styles.statsSection}>
-          <View style={styles.statsInfo}>
-            <View style={styles.statsValueRow}>
-              <ThemedText style={StyleSheet.flatten([styles.statsValue, { color: colors.text }])}>1250</ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.statsTarget, { color: colors.textSecondary }])}>/ 2500</ThemedText>
-            </View>
-            <ThemedText style={StyleSheet.flatten([styles.statsLabel, { color: colors.textSecondary }])}>KCAL RESTANTES HOJE</ThemedText>
-          </View>
-          
-          <View style={styles.chartContainer}>
-            <Svg width={96} height={96} viewBox="0 0 100 100" style={{ transform: [{ rotate: '-90deg' }] }}>
-              <Circle
-                cx="50"
-                cy="50"
-                r="44"
-                stroke={isDark ? '#27272a' : '#f3f4f6'}
-                strokeWidth="5"
-                fill="transparent"
-              />
-              <Circle
-                cx="50"
-                cy="50"
-                r="44"
-                stroke={colors.primary}
-                strokeWidth="7"
-                strokeDasharray={251.2}
-                strokeDashoffset={100}
-                strokeLinecap="round"
-                fill="transparent"
-              />
-            </Svg>
-            <View style={styles.chartIconContainer}>
-              <MaterialIcons name="local-fire-department" size={24} color={colors.primary} />
-            </View>
-          </View>
-        </View>
-
-        {/* Macro Cards Grid */}
-        <View style={styles.macroGrid}>
-          {/* Protein */}
-          <View style={StyleSheet.flatten([styles.macroCard, { backgroundColor: colors.card, borderColor: colors.border }])}>
-            <View style={styles.macroChartContainer}>
-               <Svg width={48} height={48} viewBox="0 0 100 100" style={{ transform: [{ rotate: '-90deg' }] }}>
-                <Circle cx="50" cy="50" r="42" stroke={isDark ? '#27272a' : '#f3f4f6'} strokeWidth="4" fill="transparent" />
-                <Circle cx="50" cy="50" r="42" stroke={colors.primary} strokeWidth="6" strokeDasharray={125.6} strokeDashoffset={40} strokeLinecap="round" fill="transparent" />
-              </Svg>
-              <View style={styles.macroIconOverlay}>
-                <MaterialIcons name="restaurant-menu" size={18} color={colors.text} />
-              </View>
-            </View>
-            <View style={styles.macroTextCenter}>
-              <ThemedText style={StyleSheet.flatten([styles.macroLabel, { color: colors.textSecondary }])}>PROTEÍNA</ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.macroValue, { color: colors.text }])}>75g</ThemedText>
-            </View>
-          </View>
-
-          {/* Carbs */}
-          <View style={StyleSheet.flatten([styles.macroCard, { backgroundColor: colors.card, borderColor: colors.border }])}>
-            <View style={styles.macroChartContainer}>
-               <Svg width={48} height={48} viewBox="0 0 100 100" style={{ transform: [{ rotate: '-90deg' }] }}>
-                <Circle cx="50" cy="50" r="42" stroke={isDark ? '#27272a' : '#f3f4f6'} strokeWidth="4" fill="transparent" />
-                <Circle cx="50" cy="50" r="42" stroke={colors.primary} strokeWidth="6" strokeDasharray={125.6} strokeDashoffset={60} strokeLinecap="round" fill="transparent" />
-              </Svg>
-              <View style={styles.macroIconOverlay}>
-                <MaterialIcons name="grass" size={18} color={colors.text} />
-              </View>
-            </View>
-            <View style={styles.macroTextCenter}>
-              <ThemedText style={StyleSheet.flatten([styles.macroLabel, { color: colors.textSecondary }])}>CARBOS</ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.macroValue, { color: colors.text }])}>138g</ThemedText>
-            </View>
-          </View>
-
-          {/* Fat */}
-          <View style={StyleSheet.flatten([styles.macroCard, { backgroundColor: colors.card, borderColor: colors.border }])}>
-            <View style={styles.macroChartContainer}>
-               <Svg width={48} height={48} viewBox="0 0 100 100" style={{ transform: [{ rotate: '-90deg' }] }}>
-                <Circle cx="50" cy="50" r="42" stroke={isDark ? '#27272a' : '#f3f4f6'} strokeWidth="4" fill="transparent" />
-                <Circle cx="50" cy="50" r="42" stroke={colors.primary} strokeWidth="6" strokeDasharray={125.6} strokeDashoffset={80} strokeLinecap="round" fill="transparent" />
-              </Svg>
-              <View style={styles.macroIconOverlay}>
-                <MaterialIcons name="opacity" size={18} color={colors.text} />
-              </View>
-            </View>
-            <View style={styles.macroTextCenter}>
-              <ThemedText style={StyleSheet.flatten([styles.macroLabel, { color: colors.textSecondary }])}>GORDURA</ThemedText>
-              <ThemedText style={StyleSheet.flatten([styles.macroValue, { color: colors.text }])}>35g</ThemedText>
-            </View>
-          </View>
-        </View>
-
-        {/* Settings Section */}
-        <View style={styles.sectionContainer}>
-           <ThemedText style={StyleSheet.flatten([styles.sectionTitle, { color: colors.text }])}>Configurações de Perfil</ThemedText>
-           
-           <View style={StyleSheet.flatten([styles.settingsCard, { backgroundColor: colors.card }])}>
-             
-             {/* Account */}
-             <Pressable style={styles.settingItem}>
-               <View style={styles.settingLeft}>
-                 <View style={StyleSheet.flatten([styles.settingIconBox, { backgroundColor: isDark ? '#27272a' : '#f9fafb' }])}>
-                   <MaterialIcons name="person" size={20} color={colors.text} />
+             <View style={styles.statsCard}>
+                 <View style={styles.statsHeader}>
+                     <View style={styles.statsTextContainer}>
+                         <View style={styles.kcalRow}>
+                             <Text style={styles.kcalValue}>{consumedCalories}</Text>
+                             <Text style={styles.kcalTarget}>/ {targetCalories}</Text>
+                         </View>
+                         <Text style={styles.kcalLabel}>KCAL CONSUMIDAS</Text>
+                     </View>
+                     
+                     {/* Circular Chart */}
+                     <View style={styles.chartContainer}>
+                         <Svg height="96" width="96" viewBox="0 0 96 96">
+                             <Circle cx="48" cy="48" r="40" stroke={COLORS.gray100} strokeWidth="8" fill="transparent" />
+                             <Circle 
+                                cx="48" 
+                                cy="48" 
+                                r="40" 
+                                stroke={COLORS.berryRed} 
+                                strokeWidth="8" 
+                                fill="transparent" 
+                                strokeDasharray={`${2 * Math.PI * 40}`} 
+                                strokeDashoffset={`${strokeDashoffset}`}
+                                strokeLinecap="round" 
+                                transform="rotate(-90 48 48)" 
+                             />
+                         </Svg>
+                         <View style={styles.chartIcon}>
+                             <MaterialIcons name="local-fire-department" size={24} color={COLORS.berryRed} />
+                         </View>
+                     </View>
                  </View>
-                 <ThemedText style={StyleSheet.flatten([styles.settingLabel, { color: colors.text }])}>Conta</ThemedText>
-               </View>
-               <MaterialIcons name="chevron-right" size={24} color={colors.textSecondary} />
-             </Pressable>
-
-             {/* Goals */}
-             <Pressable style={styles.settingItem}>
-               <View style={styles.settingLeft}>
-                 <View style={StyleSheet.flatten([styles.settingIconBox, { backgroundColor: isDark ? '#27272a' : '#f9fafb' }])}>
-                   <MaterialIcons name="track-changes" size={20} color={colors.text} />
+                 
+                 <View style={styles.separator} />
+                 
+                 <View style={styles.macrosRow}>
+                     <View style={styles.macroItem}>
+                         <View style={[styles.dot, { backgroundColor: COLORS.berryRed }]} />
+                         <Text style={styles.macroText}>{proteinGrams}g Prot</Text>
+                     </View>
+                     <View style={styles.macroItem}>
+                         <View style={[styles.dot, { backgroundColor: COLORS.berryOrange }]} />
+                         <Text style={styles.macroText}>{carbsGrams}g Carb</Text>
+                     </View>
+                     <View style={styles.macroItem}>
+                         <View style={[styles.dot, { backgroundColor: COLORS.gray300 }]} />
+                         <Text style={styles.macroText}>{fatGrams}g Gord</Text>
+                     </View>
                  </View>
-                 <ThemedText style={StyleSheet.flatten([styles.settingLabel, { color: colors.text }])}>Metas</ThemedText>
-               </View>
-               <MaterialIcons name="chevron-right" size={24} color={colors.textSecondary} />
-             </Pressable>
-
-             {/* Dark Mode */}
-             <View style={styles.settingItem}>
-               <View style={styles.settingLeft}>
-                 <View style={StyleSheet.flatten([styles.settingIconBox, { backgroundColor: isDark ? '#27272a' : '#f9fafb' }])}>
-                   <MaterialIcons name="dark-mode" size={20} color={colors.text} />
-                 </View>
-                 <ThemedText style={StyleSheet.flatten([styles.settingLabel, { color: colors.text }])}>Modo Escuro</ThemedText>
-               </View>
-               <Switch 
-                 value={isDarkMode} 
-                 onValueChange={setIsDarkMode}
-                 trackColor={{ false: '#e4e4e7', true: '#000000' }}
-                 thumbColor={'#ffffff'}
-                 ios_backgroundColor="#e4e4e7"
-               />
              </View>
-
-             {/* Fruit Theme */}
-             <View style={StyleSheet.flatten([styles.settingItem, { flexDirection: 'column', alignItems: 'flex-start', gap: 12 }])}>
-               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                 <View style={styles.settingLeft}>
-                   <View style={StyleSheet.flatten([styles.settingIconBox, { backgroundColor: isDark ? '#27272a' : '#f9fafb' }])}>
-                     <MaterialIcons name="shopping-basket" size={20} color={colors.text} />
-                   </View>
-                   <ThemedText style={StyleSheet.flatten([styles.settingLabel, { color: colors.text }])}>Tema da Fruta</ThemedText>
-                 </View>
-                 <MaterialIcons name="expand-more" size={24} color={colors.textSecondary} />
-               </View>
-               
-               <View style={styles.themeSelector}>
-                          {/* Strawberry */}
-                          <Pressable 
-                            onPress={() => setSelectedFruit('strawberry')}
-                            style={StyleSheet.flatten([
-                              styles.themeOption, 
-                              { 
-                                backgroundColor: selectedFruit === 'strawberry' ? (isDark ? '#27272a' : '#f9fafb') : 'transparent',
-                                borderColor: selectedFruit === 'strawberry' ? colors.primary : colors.border
-                              }
-                            ])}
-                          >
-                            <ThemedText style={StyleSheet.flatten([styles.themeName, { color: selectedFruit === 'strawberry' ? colors.primary : colors.textSecondary }])}>MORANGO</ThemedText>
-                            <View style={StyleSheet.flatten([styles.themeDot, { backgroundColor: '#FF4D8D' }])} />
-                          </Pressable>
-
-                          {/* Blueberry */}
-                          <Pressable 
-                            onPress={() => setSelectedFruit('blueberry')}
-                            style={StyleSheet.flatten([
-                              styles.themeOption, 
-                              { 
-                                backgroundColor: selectedFruit === 'blueberry' ? (isDark ? '#27272a' : '#f9fafb') : 'transparent',
-                                borderColor: selectedFruit === 'blueberry' ? colors.primary : colors.border
-                              }
-                            ])}
-                          >
-                            <ThemedText style={StyleSheet.flatten([styles.themeName, { color: selectedFruit === 'blueberry' ? colors.primary : colors.textSecondary }])}>MIRTILO</ThemedText>
-                            <View style={StyleSheet.flatten([styles.themeDot, { backgroundColor: '#3B82F6' }])} />
-                          </Pressable>
-
-                           {/* Grape */}
-                          <Pressable 
-                            onPress={() => setSelectedFruit('grape')}
-                            style={StyleSheet.flatten([
-                              styles.themeOption, 
-                              { 
-                                backgroundColor: selectedFruit === 'grape' ? (isDark ? '#27272a' : '#f9fafb') : 'transparent',
-                                borderColor: selectedFruit === 'grape' ? colors.primary : colors.border
-                              }
-                            ])}
-                          >
-                            <ThemedText style={StyleSheet.flatten([styles.themeName, { color: selectedFruit === 'grape' ? colors.primary : colors.textSecondary }])}>UVA</ThemedText>
-                            <View style={StyleSheet.flatten([styles.themeDot, { backgroundColor: '#8B5CF6' }])} />
-                          </Pressable>
-                       </View>
-             </View>
-
-             {/* Devices */}
-             <Pressable style={styles.settingItem}>
-               <View style={styles.settingLeft}>
-                 <View style={StyleSheet.flatten([styles.settingIconBox, { backgroundColor: isDark ? '#27272a' : '#f9fafb' }])}>
-                   <MaterialIcons name="watch" size={20} color={colors.text} />
-                 </View>
-                 <ThemedText style={StyleSheet.flatten([styles.settingLabel, { color: colors.text }])}>Dispositivos</ThemedText>
-               </View>
-               <MaterialIcons name="chevron-right" size={24} color={colors.textSecondary} />
-             </Pressable>
-
-           </View>
         </View>
 
-        {/* Logout */}
-        <Pressable
-          style={styles.logoutButton}
-          onPress={async () => {
-            await signOut();
-            router.replace('/login');
-          }}
-        >
-          <MaterialIcons name="logout" size={20} color={colors.textSecondary} />
-          <ThemedText style={StyleSheet.flatten([styles.logoutText, { color: colors.textSecondary }])}>Sair da conta</ThemedText>
-        </Pressable>
+        {/* SETTINGS LIST */}
+        <View style={styles.settingsSection}>
+            <Text style={styles.sectionTitle}>CONFIGURAÇÕES</Text>
+            
+            <View style={styles.settingsList}>
+                {/* Conta */}
+                <Pressable style={styles.settingItem}>
+                    <View style={styles.settingLeft}>
+                        <View style={styles.settingIconBox}>
+                            <MaterialIcons name="person" size={20} color={COLORS.gray900} />
+                        </View>
+                        <Text style={styles.settingText}>Conta</Text>
+                    </View>
+                    <MaterialIcons name="chevron-right" size={24} color={COLORS.gray400} />
+                </Pressable>
 
-        <View style={{ height: 85 }} />
+                {/* Metas */}
+                <Pressable style={styles.settingItem} onPress={() => router.push('/(tabs)/progress')}>
+                    <View style={styles.settingLeft}>
+                        <View style={styles.settingIconBox}>
+                            <MaterialIcons name="track-changes" size={20} color={COLORS.gray900} />
+                        </View>
+                        <Text style={styles.settingText}>Metas</Text>
+                    </View>
+                    <MaterialIcons name="chevron-right" size={24} color={COLORS.gray400} />
+                </Pressable>
+
+                {/* Modo Escuro */}
+                <View style={styles.settingItem}>
+                    <View style={styles.settingLeft}>
+                        <View style={styles.settingIconBox}>
+                            <MaterialIcons name="dark-mode" size={20} color={COLORS.gray900} />
+                        </View>
+                        <Text style={styles.settingText}>Modo Escuro</Text>
+                    </View>
+                    <Switch 
+                        value={isDark} 
+                        onValueChange={toggleTheme}
+                        trackColor={{ false: COLORS.gray100, true: COLORS.gray900 }}
+                        thumbColor={COLORS.white}
+                    />
+                </View>
+
+                {/* Sair */}
+                <Pressable style={[styles.settingItem, { borderBottomWidth: 0 }]} onPress={signOut}>
+                    <View style={styles.settingLeft}>
+                        <View style={[styles.settingIconBox, { backgroundColor: '#FEE2E2' }]}>
+                            <MaterialIcons name="logout" size={20} color={COLORS.berryRed} />
+                        </View>
+                        <Text style={[styles.settingText, { color: COLORS.berryRed }]}>Sair</Text>
+                    </View>
+                </Pressable>
+            </View>
+        </View>
+
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.berryBg,
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: 100,
   },
-  headerRow: {
+  heroSection: {
+    height: 320, 
+    width: '100%',
+    position: 'relative',
+    justifyContent: 'flex-end',
+  },
+  headerOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingTop: 24,
-    marginBottom: 24,
+    paddingTop: 12,
   },
   userRow: {
     flexDirection: 'row',
@@ -319,96 +299,139 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   avatarContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 1,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.8)',
     overflow: 'hidden',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
   },
   avatarImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
-  hello: {
+  greetingText: {
+    color: 'rgba(255,255,255,0.8)',
     fontSize: 10,
-    fontWeight: '700',
+    fontFamily: 'Manrope_700Bold',
     textTransform: 'uppercase',
-    letterSpacing: 1.5,
-    marginBottom: 4,
+    letterSpacing: 0.5,
   },
   userName: {
-    fontSize: 18,
-    fontWeight: '700',
-    lineHeight: 20,
+    color: COLORS.white,
+    fontSize: 16,
+    fontFamily: 'Manrope_800ExtraBold',
   },
-  iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
+  searchButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    marginBottom: 32,
-    gap: 8,
-  },
-  searchBox: {
-    flex: 1,
-    height: 56,
-    borderRadius: 28,
-    flexDirection: 'row',
-    alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'transparent', // Default
+    borderColor: 'rgba(255,255,255,0.3)',
   },
-  searchInput: {
-    flex: 1,
-    height: '100%',
+  heroBottomContent: {
+    padding: 24,
+    paddingBottom: 40, 
+  },
+  badge: {
+    backgroundColor: COLORS.berryOrange,
     paddingHorizontal: 12,
-    fontSize: 14,
+    paddingVertical: 4,
+    borderRadius: 999,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
   },
-  assistantButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  badgeText: {
+    color: COLORS.white,
+    fontSize: 10,
+    fontFamily: 'Manrope_800ExtraBold',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  dishTitle: {
+    color: COLORS.white,
+    fontSize: 28,
+    fontFamily: 'Manrope_800ExtraBold',
+    lineHeight: 34,
+    marginBottom: 12,
+  },
+  dishMeta: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 16,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 12,
+    fontFamily: 'Manrope_700Bold',
   },
   statsSection: {
     paddingHorizontal: 24,
-    marginBottom: 24,
+    marginTop: -30, 
+    zIndex: 10,
+  },
+  statsCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 24, 
+    padding: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.05,
+    shadowRadius: 20,
+    elevation: 10,
+    borderWidth: 1,
+    borderColor: COLORS.gray100,
+  },
+  statsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  statsInfo: {
-    flex: 1,
+  statsTextContainer: {
+    flexDirection: 'column',
   },
-  statsValueRow: {
+  kcalRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 4,
   },
-  statsValue: {
+  kcalValue: {
     fontSize: 48,
-    fontWeight: '800', // Black/Bold
-    letterSpacing: -1,
+    fontFamily: 'Manrope_800ExtraBold',
+    color: COLORS.berryRed,
+    letterSpacing: -2,
+    lineHeight: 56,
   },
-  statsTarget: {
-    fontSize: 20,
-    fontWeight: '500',
+  kcalTarget: {
+    fontSize: 24,
+    fontFamily: 'Manrope_700Bold',
+    color: COLORS.gray300,
   },
-  statsLabel: {
+  kcalLabel: {
     fontSize: 10,
-    fontWeight: '800',
+    fontFamily: 'Manrope_800ExtraBold',
+    color: COLORS.gray400,
     textTransform: 'uppercase',
     letterSpacing: 2,
-    marginTop: 8,
+    marginTop: 4,
   },
   chartContainer: {
     width: 96,
@@ -417,75 +440,67 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  chartIconContainer: {
+  chartIcon: {
     position: 'absolute',
   },
-  macroGrid: {
+  separator: {
+    height: 1,
+    backgroundColor: '#F9FAFB', 
+    marginVertical: 20,
+  },
+  macrosRow: {
     flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 24,
-    marginBottom: 24,
+    justifyContent: 'space-between',
   },
-  macroCard: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 32,
-    borderWidth: 1,
+  macroItem: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 6,
   },
-  macroChartContainer: {
-    width: 48,
-    height: 48,
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  macroIconOverlay: {
-    position: 'absolute',
-  },
-  macroTextCenter: {
-    alignItems: 'center',
-  },
-  macroLabel: {
-    fontSize: 9,
-    fontWeight: '800',
+  macroText: {
+    fontSize: 10,
+    fontFamily: 'Manrope_700Bold',
+    color: COLORS.gray400,
     textTransform: 'uppercase',
     letterSpacing: 1,
-    marginBottom: 4,
   },
-  macroValue: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  sectionContainer: {
+  settingsSection: {
     paddingHorizontal: 24,
-    marginBottom: 24,
+    marginTop: 32,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 20,
-    paddingLeft: 4,
+    fontSize: 16,
+    fontFamily: 'Manrope_800ExtraBold',
+    color: COLORS.gray900,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 16,
   },
-  settingsCard: {
-    borderRadius: 40,
-    padding: 12,
-    gap: 8,
+  settingsList: {
+    backgroundColor: COLORS.white,
+    borderRadius: 24,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: COLORS.gray100,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 2,
   },
   settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    // Shadow for light mode, implicit
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 8,
-    elevation: 2,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.gray100,
   },
   settingLeft: {
     flexDirection: 'row',
@@ -493,52 +508,16 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   settingIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.gray100,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  settingLabel: {
-    fontSize: 14,
-    fontWeight: '700',
+  settingText: {
+    fontSize: 16,
+    fontFamily: 'Manrope_700Bold',
+    color: COLORS.gray900,
   },
-  themeSelector: {
-    flexDirection: 'row',
-    gap: 8,
-    width: '100%',
-    paddingLeft: 4,
-  },
-  themeOption: {
-    flex: 1,
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 8,
-    padding: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  themeName: {
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  themeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 16,
-    marginBottom: 20,
-  },
-  logoutText: {
-    fontSize: 14,
-    fontWeight: '700',
-  }
 });

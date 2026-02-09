@@ -143,6 +143,8 @@ const QuizActivityScreen = () => {
             <ScrollView 
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.optionsList}
+              bounces={false}
+              overScrollMode="never"
             >
               {ACTIVITY_OPTIONS.map((option) => {
                 const isSelected = selectedActivity === option.id;

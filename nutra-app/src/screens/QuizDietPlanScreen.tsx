@@ -129,6 +129,8 @@ const QuizDietPlanScreen = () => {
           contentContainerStyle={styles.scrollContent} 
           showsVerticalScrollIndicator={false}
           style={styles.scrollView}
+          bounces={false}
+          overScrollMode="never"
         >
             {/* Intro Text */}
             <Text style={[styles.introText, themeStyles.subText]}>

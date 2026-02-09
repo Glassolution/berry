@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, Dimensions, FlatList, Animated, NativeSyntheticEvent, NativeScrollEvent, TextInput, Easing } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Dimensions, FlatList, Animated, NativeSyntheticEvent, NativeScrollEvent, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
@@ -146,9 +146,6 @@ const QuizGoalWeightScreen = () => {
   // Animation for progress bar
   const progressAnim = useRef(new Animated.Value(0)).current;
 
-  // Ref for the text input to update directly without re-renders
-  const weightTextRef = useRef<TextInput>(null);
-
   // Initialize from context if available
   useEffect(() => {
     if (quizData.unitSystem === 'imperial') {
@@ -218,10 +215,7 @@ const QuizGoalWeightScreen = () => {
           
           if (newWeight !== undefined && newWeight !== currentWeightRef.current) {
               currentWeightRef.current = newWeight;
-              
-              if (weightTextRef.current) {
-                  weightTextRef.current.setNativeProps({ text: newWeight.toString() });
-              }
+              setSelectedWeight(newWeight);
               
               // Throttle haptics to prevent bridge overload
               const now = Date.now();
@@ -262,9 +256,7 @@ const QuizGoalWeightScreen = () => {
       
       // Update refs
       currentWeightRef.current = convertedVal;
-      if (weightTextRef.current) {
-          weightTextRef.current.setNativeProps({ text: convertedVal.toString() });
-      }
+      setSelectedWeight(convertedVal);
 
       // Scroll to new position
       const newIndex = newWeightsArray.indexOf(convertedVal);
@@ -342,12 +334,7 @@ const QuizGoalWeightScreen = () => {
 
                 {/* Big Value Display - Optimized */}
                 <View style={styles.valueDisplay}>
-                    <TextInput
-                        ref={weightTextRef}
-                        style={styles.valueText}
-                        editable={false}
-                        defaultValue={selectedWeight.toString()}
-                    />
+                    <Text style={styles.valueText}>{selectedWeight}</Text>
                     <Text style={styles.unitText}>{unit}</Text>
                 </View>
 
@@ -366,6 +353,7 @@ const QuizGoalWeightScreen = () => {
                             snapToInterval={ITEM_WIDTH}
                             decelerationRate="fast"
                             bounces={false}
+                            overScrollMode="never"
                             contentContainerStyle={{
                                 paddingHorizontal: width / 2 - ITEM_WIDTH / 2
                             }}
@@ -423,6 +411,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.backgroundLight,
+    overflow: 'hidden',
   },
   bgPattern: {
       ...StyleSheet.absoluteFillObject,

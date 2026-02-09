@@ -246,6 +246,7 @@ const QuizAgeScreen = () => {
                 snapToInterval={ITEM_HEIGHT}
                 decelerationRate="fast"
                 bounces={false}
+                overScrollMode="never"
                 initialNumToRender={20}
                 maxToRenderPerBatch={20}
                 windowSize={10}

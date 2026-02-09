@@ -305,6 +305,8 @@ const QuizMeasurementsScreen = () => {
                             keyExtractor={(item) => `h-${item}`}
                             renderItem={(props) => renderPickerItem(props as any, 'height')}
                             showsVerticalScrollIndicator={false}
+                            bounces={false}
+                            overScrollMode="never"
                             snapToInterval={ITEM_HEIGHT}
                             decelerationRate="fast"
                             contentContainerStyle={{ paddingVertical: 0 }} // Removed padding, using Header/Footer
@@ -336,6 +338,8 @@ const QuizMeasurementsScreen = () => {
                             keyExtractor={(item) => `w-${item}`}
                             renderItem={(props) => renderPickerItem(props as any, 'weight')}
                             showsVerticalScrollIndicator={false}
+                            bounces={false}
+                            overScrollMode="never"
                             snapToInterval={ITEM_HEIGHT}
                             decelerationRate="fast"
                             contentContainerStyle={{ paddingVertical: 0 }} // Removed padding, using Header/Footer
