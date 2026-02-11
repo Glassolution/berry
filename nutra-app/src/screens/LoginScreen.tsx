@@ -11,6 +11,7 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
@@ -70,12 +71,13 @@ export default function LoginScreen() {
       return;
     }
 
+    Keyboard.dismiss();
     setLoading(true);
     setErrorMessage('');
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
@@ -247,13 +249,28 @@ export default function LoginScreen() {
 
               {/* Login Button */}
               <TouchableOpacity
-                style={styles.loginButton}
+                style={[styles.loginButton, loading && { opacity: 0.7 }]}
                 onPress={handleEmailLogin}
                 activeOpacity={0.9}
+                disabled={loading}
               >
-                <Text style={styles.loginButtonText}>Entrar</Text>
-                <MaterialIcons name="auto-awesome" size={20} color="white" />
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Text style={styles.loginButtonText}>Entrar</Text>
+                    <MaterialIcons name="auto-awesome" size={20} color="white" />
+                  </>
+                )}
               </TouchableOpacity>
+
+              {/* Error Message */}
+              {errorMessage ? (
+                <View style={styles.errorContainer}>
+                  <MaterialIcons name="error-outline" size={16} color="#E11D48" />
+                  <Text style={styles.errorText}>{errorMessage}</Text>
+                </View>
+              ) : null}
 
               {/* Register Link */}
               <View style={styles.registerContainer}>
@@ -275,6 +292,7 @@ export default function LoginScreen() {
                 <TouchableOpacity
                   style={styles.socialButton}
                   onPress={handleGoogleLogin}
+                  disabled={loading}
                 >
                   <Svg width={24} height={24} viewBox="0 0 24 24">
                      <Path

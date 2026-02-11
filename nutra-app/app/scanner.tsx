@@ -292,7 +292,7 @@ export default function ScannerScreen() {
 
   const analyzeFood = async (uri: string, signal?: AbortSignal) => {
     let base64 = await FileSystem.readAsStringAsync(uri, {
-      encoding: FileSystem.EncodingType.Base64,
+      encoding: 'base64',
     });
 
     // Ensure base64 is pure (remove prefix if present)
