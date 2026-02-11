@@ -199,7 +199,7 @@ const EstimatedCard = ({ calories }: { calories: number }) => {
   );
 };
 
-const NotFoodCard = ({ title }: { title: string }) => {
+const NotFoodCard = ({ title, subtitle }: { title: string; subtitle?: string }) => {
   return (
     <View style={styles.notFoodCard}>
       <View style={styles.notFoodRow}>
@@ -208,7 +208,9 @@ const NotFoodCard = ({ title }: { title: string }) => {
         </View>
         <View style={styles.notFoodTextCol}>
           <Text style={styles.notFoodTitle}>{title}</Text>
-          <Text style={styles.notFoodSubtitle}>Tente apontar para um alimento, rótulo ou código de barras.</Text>
+          <Text style={styles.notFoodSubtitle}>
+            {subtitle || 'Tente apontar para um alimento, rótulo ou código de barras.'}
+          </Text>
         </View>
       </View>
     </View>
@@ -287,6 +289,7 @@ export default function ScanResultScreen() {
       : typeof (params as any).isFood === 'boolean'
         ? (params as any).isFood
         : true;
+  const notes = typeof (params as any).notes === 'string' ? (params as any).notes : null;
   const hasAnyNutrition = calories > 0 || protein > 0 || carbs > 0 || fat > 0;
   const looksUnknown = !rawName || rawName.toLowerCase() === 'unknown food';
   const isNonFood = !isFoodParam || (!hasAnyNutrition && looksUnknown);
@@ -365,7 +368,10 @@ export default function ScanResultScreen() {
             </View>
 
             {isNonFood ? (
-              <NotFoodCard title="Não foi possível identificar o alimento" />
+              <NotFoodCard 
+                title={notes ? "Não foi possível identificar" : "Não foi possível identificar o alimento"} 
+                subtitle={notes || undefined}
+              />
             ) : (
               <>
                 <EstimatedCard calories={calories} />
@@ -506,6 +512,7 @@ const styles = StyleSheet.create({
   hero: {
     marginHorizontal: 16,
     marginTop: 12,
+    marginBottom: 16,
     aspectRatio: 1,
     borderRadius: 20,
     overflow: 'hidden',
@@ -554,11 +561,10 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderWidth: 2,
     borderColor: COLORS.white,
-    shadowColor: COLORS.primary,
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
+    shadowColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
     shadowOffset: { width: 0, height: 0 },
-    elevation: 6,
   },
   heroBadges: {
     position: 'absolute',

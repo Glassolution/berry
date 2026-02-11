@@ -20,6 +20,8 @@ export interface Insight {
 interface InsightsContextType {
   activeInsight: Insight | null;
   allInsights: Insight[];
+  isInsightsHidden: boolean;
+  dismissUntilNew: () => void;
   markAsRead: (id: string) => void;
   refreshInsights: () => void;
 }
@@ -32,9 +34,11 @@ export const InsightsProvider = ({ children }: { children: ReactNode }) => {
   
   const [allInsights, setAllInsights] = useState<Insight[]>([]);
   const [lastGenerated, setLastGenerated] = useState<number>(0);
+  const [dismissedAt, setDismissedAt] = useState<number | null>(null);
 
   // Frequency Policy Config
   const MIN_GAP_MS = 90 * 60 * 1000; // 90 minutes
+  const MAX_INSIGHTS = 10;
   
   const refreshInsights = () => {
     const now = Date.now();
@@ -55,11 +59,32 @@ export const InsightsProvider = ({ children }: { children: ReactNode }) => {
 
     const newInsights = generateInsights(data);
     
-    // Merge logic: Don't duplicate IDs, prioritize unread
     setAllInsights(prev => {
-        const existingIds = new Set(prev.map(i => i.id));
-        const uniqueNew = newInsights.filter(i => !existingIds.has(i.id));
-        return [...uniqueNew, ...prev].slice(0, 10); // Keep last 10
+        const prevById = new Map(prev.map(i => [i.id, i]));
+        const touchedIds = new Set<string>();
+        const newOrUpdated: Insight[] = [];
+
+        for (const next of newInsights) {
+          const existing = prevById.get(next.id);
+          touchedIds.add(next.id);
+
+          if (!existing) {
+            newOrUpdated.push(next);
+            continue;
+          }
+
+          const existingTime = Date.parse(existing.created_at) || 0;
+          const nextTime = Date.parse(next.created_at) || 0;
+
+          if (nextTime > existingTime) {
+            newOrUpdated.push({ ...next, is_read: false });
+          } else {
+            newOrUpdated.push(existing);
+          }
+        }
+
+        const remaining = prev.filter(i => !touchedIds.has(i.id));
+        return [...newOrUpdated, ...remaining].slice(0, MAX_INSIGHTS);
     });
     
     if (newInsights.length > 0) {
@@ -81,11 +106,19 @@ export const InsightsProvider = ({ children }: { children: ReactNode }) => {
     setAllInsights(prev => prev.map(i => i.id === id ? { ...i, is_read: true } : i));
   };
 
-  // Active insight is the most recent unread one, or the most recent one if all read
-  const activeInsight = allInsights.find(i => !i.is_read) || allInsights[0] || null;
+  const dismissUntilNew = () => {
+    const now = Date.now();
+    setDismissedAt(now);
+    setAllInsights(prev => prev.map(i => ({ ...i, is_read: true })));
+  };
+
+  const unreadInsight = allInsights.find(i => !i.is_read) || null;
+  const unreadTime = unreadInsight ? (Date.parse(unreadInsight.created_at) || 0) : 0;
+  const isInsightsHidden = dismissedAt != null && (!unreadInsight || unreadTime <= dismissedAt);
+  const activeInsight = isInsightsHidden ? null : unreadInsight;
 
   return (
-    <InsightsContext.Provider value={{ activeInsight, allInsights, markAsRead, refreshInsights }}>
+    <InsightsContext.Provider value={{ activeInsight, allInsights, isInsightsHidden, dismissUntilNew, markAsRead, refreshInsights }}>
       {children}
     </InsightsContext.Provider>
   );

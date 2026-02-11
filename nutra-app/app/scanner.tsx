@@ -4,12 +4,14 @@ import { CameraView, CameraType, FlashMode, useCameraPermissions, BarcodeScannin
 import { Image } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { useRouter, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuiz } from '../src/context/QuizContext';
 import { useScan } from '../src/context/ScanContext';
+import { supabaseUrl, supabaseAnonKey } from '../src/lib/supabase';
 
 const { width, height } = Dimensions.get('window');
 
@@ -250,7 +252,7 @@ export default function ScannerScreen() {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false, // Full screen analysis usually prefers uncropped
-      quality: 1,
+      quality: 0.8,
     });
 
     if (!result.canceled && result.assets[0].uri) {
@@ -288,35 +290,116 @@ export default function ScannerScreen() {
       }, 2000);
   };
 
-  const processImage = (uri: string) => {
+  const analyzeFood = async (uri: string, signal?: AbortSignal) => {
+    let base64 = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+
+    // Ensure base64 is pure (remove prefix if present)
+    if (base64.startsWith('data:image')) {
+        base64 = base64.split(',')[1];
+    }
+
+    const response = await fetch(`${supabaseUrl}/functions/v1/analyze-food`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+        'apikey': supabaseAnonKey,
+      },
+      body: JSON.stringify({ imageBase64: base64 }),
+      signal,
+    });
+
+    if (!response.ok) {
+      try {
+        const errorData = await response.json();
+        throw new Error(errorData.message || errorData.error || `Erro da IA (${response.status})`);
+      } catch (e: any) {
+        // If it was already the error we threw, rethrow it
+        if (e.message && e.message.includes('Erro da IA')) throw e;
+        throw new Error(`Falha na comunicação com a IA (${response.status})`);
+      }
+    }
+
+    return await response.json();
+  };
+
+  const processImage = async (uri: string) => {
     setCapturedImage(uri);
-    // Simulate analysis delay
-    setTimeout(() => {
-        setIsCapturing(false);
-        setCapturedImage(null);
-        
-        // Mock data for image scan
-        const scanResult = {
+    setIsCapturing(true);
+
+    // Timeout de 25 segundos
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
+
+    try {
+      const data = await analyzeFood(uri, controller.signal);
+      clearTimeout(timeoutId);
+      
+      let scanResult;
+
+      if (data.isFood === false) {
+         scanResult = {
             imageUri: uri,
-            name: "Prato Saudável",
-            calories: 450,
-            protein: 25,
-            carbs: 40,
-            fat: 15,
+            name: "Não identificado",
+            calories: 0,
+            protein: 0,
+            carbs: 0,
+            fat: 0,
+            isFood: 'false' as const,
+            source: 'image',
+            confidence: data.confidence,
+            notes: data.notes || "Não foi possível identificar alimentos na imagem.",
+         };
+      } else {
+         scanResult = {
+            imageUri: uri,
+            name: data.items && data.items.length > 0 ? data.items[0].name : "Alimento Identificado",
+            calories: data.total?.kcal || 0,
+            protein: data.total?.protein_g || 0,
+            carbs: data.total?.carbs_g || 0,
+            fat: data.total?.fat_g || 0,
             isFood: 'true' as const,
             source: 'image',
-        };
+            confidence: data.confidence,
+            ingredients: JSON.stringify(data.items.map((item: any) => ({
+                name: item.name,
+                portionLabel: item.estimated_grams ? `${item.estimated_grams}g` : 'Porção estimada',
+                calories: item.kcal
+            })))
+         };
+      }
 
-        if (isQuizCompleted) {
-            router.push({
-                pathname: '/ScanResultScreen',
-                params: scanResult
-            });
-        } else {
-            setPendingScan(scanResult);
-            router.push('/diet-onboarding');
-        }
-    }, 1500);
+      setCapturedImage(null);
+      
+      if (isQuizCompleted) {
+          router.push({
+              pathname: '/ScanResultScreen',
+              params: scanResult as any
+          });
+      } else {
+          setPendingScan(scanResult as any);
+          router.push('/diet-onboarding');
+      }
+
+    } catch (error: any) {
+       clearTimeout(timeoutId);
+       console.error("Analysis failed:", error);
+       
+       let errorMessage = "Não foi possível analisar a imagem. Tente novamente.";
+       
+       if (error.name === 'AbortError' || error.message?.includes('aborted')) {
+           errorMessage = "A análise demorou muito. Verifique sua conexão.";
+       } else if (error.message) {
+           errorMessage = error.message;
+       }
+
+       Alert.alert("Erro", errorMessage);
+       setCapturedImage(null);
+    } finally {
+       setIsCapturing(false);
+    }
   };
 
   const handleTabPress = (tab: typeof TABS[0]) => {
