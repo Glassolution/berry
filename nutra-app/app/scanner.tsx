@@ -4,7 +4,7 @@ import { CameraView, CameraType, FlashMode, useCameraPermissions, BarcodeScannin
 import { Image } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system/legacy';
+import * as ImageManipulator from "expo-image-manipulator";
 import { useRouter, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -272,15 +272,29 @@ export default function ScannerScreen() {
     try {
       setIsCapturing(true);
       const photo = await cameraRef.current.takePictureAsync({
-        base64: true,
-        quality: 0.7,
+        quality: 0.6,
+        base64: false,
       });
-      
+
       if (photo?.uri) {
         if (activeTab === 'food_label') {
             processFoodLabel(photo.uri);
         } else {
-            processImage({ uri: photo.uri, base64: photo.base64 ?? undefined, mimeType: 'image/jpeg' });
+            const optimized = await ImageManipulator.manipulateAsync(
+              photo.uri,
+              [{ resize: { width: 800 } }],
+              {
+                compress: 0.5,
+                format: ImageManipulator.SaveFormat.JPEG,
+                base64: true,
+              },
+            );
+
+            const base64Image = (optimized.base64 ?? "").replace(/\s/g, "");
+            if (!base64Image) {
+              throw new Error("Falha ao gerar base64 otimizado.");
+            }
+            processImage({ uri: photo.uri, base64: base64Image, mimeType: 'image/jpeg' });
         }
       }
     } catch (error) {
@@ -349,13 +363,8 @@ export default function ScannerScreen() {
     });
 
     if (!response.ok) {
-      try {
-        const errorData = await response.json();
-        throw new Error(errorData.message || errorData.error || `Falha na análise (${response.status})`);
-      } catch (e: any) {
-        if (typeof e?.message === 'string' && e.message.includes('Falha na análise')) throw e;
-        throw new Error(`Falha na requisição (${response.status})`);
-      }
+      const text = await response.text();
+      throw new Error(`HTTP ${response.status}: ${text.slice(0, 900)}`);
     }
 
     const data = await response.json();
@@ -380,7 +389,21 @@ export default function ScannerScreen() {
         const out = await readBase64FromUriWeb(uri);
         imageBase64 = out.base64;
       } else {
-        imageBase64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
+        const optimized = await ImageManipulator.manipulateAsync(
+          uri,
+          [{ resize: { width: 800 } }],
+          {
+            compress: 0.5,
+            format: ImageManipulator.SaveFormat.JPEG,
+            base64: true,
+          },
+        );
+
+        const base64Image = (optimized.base64 ?? "").replace(/\s/g, "");
+        if (!base64Image) {
+          throw new Error("Falha ao gerar base64 otimizado.");
+        }
+        imageBase64 = base64Image;
       }
 
       const data = await analyzeFood(
