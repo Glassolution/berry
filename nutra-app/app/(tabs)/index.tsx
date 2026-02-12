@@ -13,7 +13,7 @@ import StreakPill from '@/components/dashboard/StreakPill';
 
 // Colors from New Design
 const COLORS = {
-  primary: "#FF4B4B", 
+  primary: "#ee2b5b",
   navy: "#1A1C2E",
   background: "#FAFBFC",
   white: "#FFFFFF",
@@ -91,7 +91,7 @@ export default function DashboardScreen() {
           <View style={styles.headerContent}>
               <View style={styles.logoContainer}>
                     <View style={styles.logoBox}>
-                        <Svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                        <Svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                             <Path d="M12 22C16.5 22 20 18.5 20 14C20 9.5 17 5 12 5C7 5 4 9.5 4 14C4 18.5 7.5 22 12 22Z" fill="white"/>
                             <Path d="M12 5C12 3 13 2 15 2M12 5C12 3 11 2 9 2" stroke="white" strokeWidth="2" strokeLinecap="round"/>
                             <Circle cx="9" cy="11" r="1" fill={COLORS.primary} />
@@ -364,9 +364,9 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: COLORS.white,
-    paddingTop: 16,
-    paddingBottom: 16,
-    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: 12,
+    paddingHorizontal: 20,
   },
   headerContent: {
     flexDirection: 'row',
@@ -376,31 +376,31 @@ const styles = StyleSheet.create({
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 12,
   },
   logoBox: {
-    width: 56,
-    height: 56,
+    width: 44,
+    height: 44,
     backgroundColor: COLORS.primary,
-    borderRadius: 22,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: COLORS.red200,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.5,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 12,
+    elevation: 6,
   },
   logoText: {
-    fontSize: 32,
-    fontWeight: '900',
+    fontSize: 28,
+    fontFamily: 'Manrope_800ExtraBold',
     color: COLORS.navy,
-    letterSpacing: -1,
+    letterSpacing: -1.2,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   streakBadge: {
     flexDirection: 'row',
@@ -419,10 +419,10 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   avatarContainer: {
-    width: 48,
-    height: 48,
+    width: 40,
+    height: 40,
     borderRadius: 999,
-    borderWidth: 4,
+    borderWidth: 3,
     borderColor: COLORS.white,
     overflow: 'hidden',
     shadowColor: '#000',
@@ -466,26 +466,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   calendarItemInactive: {
-    minWidth: 70,
-    height: 84,
-    borderRadius: 24,
+    minWidth: 56,
+    height: 72,
+    borderRadius: 20,
     backgroundColor: '#F8F9FB',
     borderColor: COLORS.slate50,
   },
   calendarItemActive: {
-    minWidth: 85,
-    height: 100,
-    borderRadius: 28,
+    minWidth: 64,
+    height: 82,
+    borderRadius: 22,
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
     shadowColor: COLORS.red200,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.8,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.75,
+    shadowRadius: 18,
+    elevation: 9,
   },
   calendarDay: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 1,
@@ -493,17 +493,17 @@ const styles = StyleSheet.create({
   },
   calendarDate: {
     fontWeight: 'bold',
-    fontSize: 20,
+    fontSize: 18,
   },
   textSlate400: { color: '#8E99AF' },
-  textWhite: { color: COLORS.white, fontSize: 24, fontWeight: '900' },
+  textWhite: { color: COLORS.white, fontSize: 20, fontWeight: '900' },
   textWhite90: { color: 'rgba(255,255,255,0.9)' },
   activeDot: {
-    width: 6,
-    height: 6,
+    width: 5,
+    height: 5,
     backgroundColor: COLORS.white,
-    borderRadius: 3,
-    marginTop: 8,
+    borderRadius: 2.5,
+    marginTop: 6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,

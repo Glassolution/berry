@@ -11,7 +11,7 @@ import { MaterialIcons, Ionicons, MaterialCommunityIcons } from '@expo/vector-ic
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuiz } from '../src/context/QuizContext';
 import { useScan } from '../src/context/ScanContext';
-import { supabaseUrl, supabaseAnonKey } from '../src/lib/supabase';
+import { supabaseAnonKey } from '../src/lib/supabase';
 
 const { width, height } = Dimensions.get('window');
 
@@ -272,15 +272,15 @@ export default function ScannerScreen() {
     try {
       setIsCapturing(true);
       const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.8,
-        skipProcessing: false,
+        base64: true,
+        quality: 0.7,
       });
       
       if (photo?.uri) {
         if (activeTab === 'food_label') {
             processFoodLabel(photo.uri);
         } else {
-            processImage(photo.uri);
+            processImage({ uri: photo.uri, base64: photo.base64 ?? undefined, mimeType: 'image/jpeg' });
         }
       }
     } catch (error) {
@@ -299,7 +299,7 @@ export default function ScannerScreen() {
     });
 
     if (!result.canceled && result.assets[0].uri) {
-      processImage(result.assets[0].uri);
+      processImage({ uri: result.assets[0].uri });
     }
   };
 
@@ -333,46 +333,38 @@ export default function ScannerScreen() {
       }, 2000);
   };
 
-  const analyzeFood = async (uri: string, signal?: AbortSignal) => {
-    let base64: string;
-    let imageMime: string | undefined;
-
-    if (Platform.OS === 'web') {
-      const out = await readBase64FromUriWeb(uri);
-      base64 = out.base64;
-      imageMime = out.mime;
-    } else {
-      base64 = await FileSystem.readAsStringAsync(uri, {
-        encoding: 'base64',
-      });
-    }
-
-    const response = await fetch(`${supabaseUrl}/functions/v1/analyze-food`, {
+  const analyzeFood = async (
+    payload: { imageBase64: string; mimeType: string },
+    signal?: AbortSignal,
+  ) => {
+    const response = await fetch('https://shfhvlogmkfnqxcuumfl.supabase.co/functions/v1/analyze-food', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${supabaseAnonKey}`,
         'apikey': supabaseAnonKey,
       },
-      body: JSON.stringify({ imageBase64: base64, imageMime }),
+      body: JSON.stringify({ imageBase64: payload.imageBase64, mimeType: payload.mimeType }),
       signal,
     });
 
     if (!response.ok) {
       try {
         const errorData = await response.json();
-        throw new Error(errorData.message || errorData.error || `Erro da IA (${response.status})`);
+        throw new Error(errorData.message || errorData.error || `Falha na análise (${response.status})`);
       } catch (e: any) {
-        // If it was already the error we threw, rethrow it
-        if (e.message && e.message.includes('Erro da IA')) throw e;
-        throw new Error(`Falha na comunicação com a IA (${response.status})`);
+        if (typeof e?.message === 'string' && e.message.includes('Falha na análise')) throw e;
+        throw new Error(`Falha na requisição (${response.status})`);
       }
     }
 
-    return await response.json();
+    const data = await response.json();
+
+    return data;
   };
 
-  const processImage = async (uri: string) => {
+  const processImage = async (input: { uri: string; base64?: string; mimeType?: string }) => {
+    const uri = input.uri;
     setCapturedImage(uri);
     setIsCapturing(true);
 
@@ -381,12 +373,30 @@ export default function ScannerScreen() {
     const timeoutId = setTimeout(() => controller.abort(), 25000);
 
     try {
-      const data = await analyzeFood(uri, controller.signal);
+      let imageBase64: string;
+      if (typeof input.base64 === 'string' && input.base64.trim().length > 0) {
+        imageBase64 = input.base64;
+      } else if (Platform.OS === 'web') {
+        const out = await readBase64FromUriWeb(uri);
+        imageBase64 = out.base64;
+      } else {
+        imageBase64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
+      }
+
+      const data = await analyzeFood(
+        { imageBase64, mimeType: typeof input.mimeType === 'string' ? input.mimeType : 'image/jpeg' },
+        controller.signal,
+      );
       clearTimeout(timeoutId);
       
       let scanResult;
 
-      if (data.isFood === false) {
+      const result = (data as any)?.result;
+      const totals = result?.totals;
+      const isFood = result?.is_food;
+
+      if (isFood === false) {
+         Alert.alert("Erro", "Não foi possível identificar alimentos na imagem.");
          scanResult = {
             imageUri: uri,
             name: "Não identificado",
@@ -396,40 +406,32 @@ export default function ScannerScreen() {
             fat: 0,
             isFood: 'false' as const,
             source: 'image',
-            confidence: data.confidence,
-            notes: data.notes || "Não foi possível identificar alimentos na imagem.",
+            notes: typeof result?.message === 'string' && result.message.trim()
+              ? result.message
+              : "Não foi possível identificar alimentos na imagem.",
          };
       } else {
-         const items = Array.isArray(data?.items) ? data.items : [];
-         const total = data?.total;
-         const hasAnyMacro =
-           typeof total?.kcal === 'number' && total.kcal > 0 ||
-           typeof total?.protein_g === 'number' && total.protein_g > 0 ||
-           typeof total?.carbs_g === 'number' && total.carbs_g > 0 ||
-           typeof total?.fat_g === 'number' && total.fat_g > 0;
+         const calories = toNumber(totals?.calories) ?? 0;
+         const protein = toNumber(totals?.protein_g) ?? 0;
+         const carbs = toNumber(totals?.carbs_g) ?? 0;
+         const fat = toNumber(totals?.fat_g) ?? 0;
 
-         if (!hasAnyMacro && items.length === 0) {
-           throw new Error(data?.notes || "Não foi possível estimar calorias e macros.");
+         const hasAnyMacro = calories > 0 || protein > 0 || carbs > 0 || fat > 0;
+
+         if (!hasAnyMacro) {
+           throw new Error("Não foi possível estimar calorias e macros.");
          }
          scanResult = {
             imageUri: uri,
-            name: items.length > 0 && typeof items[0]?.name === 'string' ? items[0].name : "Alimento Identificado",
-            calories: data.total?.kcal || 0,
-            protein: data.total?.protein_g || 0,
-            carbs: data.total?.carbs_g || 0,
-            fat: data.total?.fat_g || 0,
+            name: typeof result?.food_name === 'string' && result.food_name.trim()
+              ? result.food_name
+              : "Alimento Identificado",
+            calories,
+            protein,
+            carbs,
+            fat,
             isFood: 'true' as const,
             source: 'image',
-            confidence: data.confidence,
-            ingredients: items.length
-              ? JSON.stringify(
-                  items.map((item: any) => ({
-                    name: typeof item?.name === 'string' ? item.name : 'Item',
-                    portionLabel: item?.estimated_grams ? `${item.estimated_grams}g` : 'Porção estimada',
-                    calories: typeof item?.kcal === 'number' ? item.kcal : 0,
-                  })),
-                )
-              : undefined,
          };
       }
 
