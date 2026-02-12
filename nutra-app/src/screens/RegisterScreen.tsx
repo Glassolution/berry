@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { supabase } from '../lib/supabase';
+import { supabase, supabaseAnonKey, supabaseUrl } from '../lib/supabase';
 import { useQuiz } from '../context/QuizContext';
 import { signInWithGoogle } from '../services/socialAuth';
 import Svg, { Path, Circle } from 'react-native-svg';
@@ -49,10 +49,10 @@ export default function RegisterScreen() {
 
   const checkConnection = async () => {
     try {
-      const response = await fetch('https://shfhvlogmkfnqxcuumfl.supabase.co/rest/v1/', {
+      const response = await fetch(`${supabaseUrl}/rest/v1/`, {
         method: 'HEAD',
         headers: {
-          'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNoZmh2bG9nbWtmbnF4Y3V1bWZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MjM4NDksImV4cCI6MjA4MDk5OTg0OX0.ialrVY_ntBQ6vKkB5RxyyKXbAQSRMTM3fCKS2MYgM5o'
+          apikey: supabaseAnonKey,
         }
       });
       if (response.ok || response.status === 401 || response.status === 200) {

@@ -9,6 +9,7 @@ import { useAuth } from '@/src/context/AuthContext';
 import { useNutrition } from '@/src/context/NutritionContext';
 import { useInsights } from '@/src/context/InsightsContext';
 import { InsightCard } from '@/components/InsightCard';
+import StreakPill from '@/components/dashboard/StreakPill';
 
 // Colors from New Design
 const COLORS = {
@@ -104,10 +105,7 @@ export default function DashboardScreen() {
                 </View>
 
               <View style={styles.headerRight}>
-                  <View style={styles.streakBadge}>
-                      <MaterialIcons name="local-fire-department" size={20} color={COLORS.orange600} />
-                      <Text style={styles.streakText}>12</Text>
-                  </View>
+                  <StreakPill />
                   <Link href="/(tabs)/meals" asChild>
                       <Pressable style={styles.avatarContainer}>
                           {avatarUrl ? (
@@ -454,10 +452,12 @@ const styles = StyleSheet.create({
   calendarContainer: {
     backgroundColor: COLORS.white,
     paddingBottom: 24,
-    paddingHorizontal: 24,
+    paddingHorizontal: 0,
   },
   calendarScroll: {
-    gap: 8,
+    flexGrow: 1,
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
     paddingVertical: 8,
   },
   calendarItem: {

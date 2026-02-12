@@ -1,6 +1,7 @@
-﻿node_modules/
+node_modules/
 .expo/
 .DS_Store
+.vscode/
 .env
 .env.*
 npm-debug.log*

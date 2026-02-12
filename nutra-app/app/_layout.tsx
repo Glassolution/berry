@@ -15,6 +15,7 @@ import { NutritionProvider } from '@/src/context/NutritionContext';
 import { InsightsProvider } from '@/src/context/InsightsContext';
 import { ScanProvider } from '@/src/context/ScanContext';
 import { AuthProvider, useAuth } from '@/src/context/AuthContext';
+import { StreakProvider } from '@/src/context/StreakContext';
 import { useQuiz } from '@/src/context/QuizContext';
 import { supabase } from '@/src/lib/supabase';
 import { calculateDietPlan, DietPlan } from '@/src/utils/nutritionCalculations';
@@ -206,6 +207,11 @@ function RootLayoutNav() {
   );
 }
 
+function StreakGate({ children }: { children: React.ReactNode }) {
+  const { session } = useAuth();
+  return <StreakProvider userId={session?.user?.id ?? null}>{children}</StreakProvider>;
+}
+
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     Manrope_300Light,
@@ -224,6 +230,7 @@ export default function RootLayout() {
   return (
     <AppThemeProvider>
       <AuthProvider>
+        <StreakGate>
           <QuizProvider>
             <NutritionProvider>
               <InsightsProvider>
@@ -233,7 +240,8 @@ export default function RootLayout() {
               </InsightsProvider>
             </NutritionProvider>
           </QuizProvider>
-        </AuthProvider>
+        </StreakGate>
+      </AuthProvider>
     </AppThemeProvider>
   );
 }

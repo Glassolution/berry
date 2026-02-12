@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Dimensions, Alert, Linking, ActivityIndicator, StatusBar, Image as RNImage, Vibration } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Dimensions, Alert, Linking, ActivityIndicator, StatusBar, Image as RNImage, Vibration, Platform } from 'react-native';
 import { CameraView, CameraType, FlashMode, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { Image } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { useRouter, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -112,6 +112,36 @@ const fetchBarcodeNutrition = async (barcode: string) => {
   };
 };
 
+const dataUrlToBase64 = (dataUrl: string) => {
+  const trimmed = dataUrl.trim();
+  const idx = trimmed.indexOf('base64,');
+  if (idx === -1) return { base64: trimmed, mime: undefined as string | undefined };
+  const mimeMatch = trimmed.match(/^data:([^;]+);base64,/);
+  const mime = mimeMatch?.[1];
+  return { base64: trimmed.slice(idx + 'base64,'.length), mime };
+};
+
+const readBase64FromUriWeb = async (uri: string) => {
+  if (uri.startsWith('data:')) {
+    return dataUrlToBase64(uri);
+  }
+
+  const res = await fetch(uri);
+  if (!res.ok) {
+    throw new Error('Falha ao ler a imagem no navegador.');
+  }
+
+  const blob = await res.blob();
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Falha ao converter imagem para base64.'));
+    reader.onload = () => resolve(String(reader.result ?? ''));
+    reader.readAsDataURL(blob);
+  });
+
+  return dataUrlToBase64(dataUrl);
+};
+
 export default function ScannerScreen() {
   const router = useRouter();
   const [permission, requestPermission] = useCameraPermissions();
@@ -122,6 +152,7 @@ export default function ScannerScreen() {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [scanned, setScanned] = useState(false);
   const cameraRef = useRef<CameraView>(null);
+  const openedSettingsRef = useRef(false);
 
   const { isQuizCompleted } = useQuiz();
   const { setPendingScan } = useScan();
@@ -136,12 +167,19 @@ export default function ScannerScreen() {
 
   // Request permission on mount
   useEffect(() => {
-    if (permission && !permission.granted && !permission.canAskAgain) {
-        // Permission denied/blocked previously
-    } else if (!permission?.granted) {
+    if (!permission) return;
+    if (permission.granted) return;
+
+    if (permission.canAskAgain) {
       requestPermission();
+      return;
     }
-  }, [permission]);
+
+    if (!openedSettingsRef.current) {
+      openedSettingsRef.current = true;
+      Linking.openSettings();
+    }
+  }, [permission, requestPermission]);
 
   const toggleCameraFacing = () => {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
@@ -221,6 +259,11 @@ export default function ScannerScreen() {
   const handleCapture = async () => {
     if (!cameraRef.current || isCapturing) return;
 
+    if (Platform.OS === 'web') {
+      pickImage();
+      return;
+    }
+
     if (activeTab === 'barcode') {
         // Manual trigger if needed, or ignore
         return;
@@ -291,13 +334,17 @@ export default function ScannerScreen() {
   };
 
   const analyzeFood = async (uri: string, signal?: AbortSignal) => {
-    let base64 = await FileSystem.readAsStringAsync(uri, {
-      encoding: 'base64',
-    });
+    let base64: string;
+    let imageMime: string | undefined;
 
-    // Ensure base64 is pure (remove prefix if present)
-    if (base64.startsWith('data:image')) {
-        base64 = base64.split(',')[1];
+    if (Platform.OS === 'web') {
+      const out = await readBase64FromUriWeb(uri);
+      base64 = out.base64;
+      imageMime = out.mime;
+    } else {
+      base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: 'base64',
+      });
     }
 
     const response = await fetch(`${supabaseUrl}/functions/v1/analyze-food`, {
@@ -307,7 +354,7 @@ export default function ScannerScreen() {
         'Authorization': `Bearer ${supabaseAnonKey}`,
         'apikey': supabaseAnonKey,
       },
-      body: JSON.stringify({ imageBase64: base64 }),
+      body: JSON.stringify({ imageBase64: base64, imageMime }),
       signal,
     });
 
@@ -353,9 +400,20 @@ export default function ScannerScreen() {
             notes: data.notes || "Não foi possível identificar alimentos na imagem.",
          };
       } else {
+         const items = Array.isArray(data?.items) ? data.items : [];
+         const total = data?.total;
+         const hasAnyMacro =
+           typeof total?.kcal === 'number' && total.kcal > 0 ||
+           typeof total?.protein_g === 'number' && total.protein_g > 0 ||
+           typeof total?.carbs_g === 'number' && total.carbs_g > 0 ||
+           typeof total?.fat_g === 'number' && total.fat_g > 0;
+
+         if (!hasAnyMacro && items.length === 0) {
+           throw new Error(data?.notes || "Não foi possível estimar calorias e macros.");
+         }
          scanResult = {
             imageUri: uri,
-            name: data.items && data.items.length > 0 ? data.items[0].name : "Alimento Identificado",
+            name: items.length > 0 && typeof items[0]?.name === 'string' ? items[0].name : "Alimento Identificado",
             calories: data.total?.kcal || 0,
             protein: data.total?.protein_g || 0,
             carbs: data.total?.carbs_g || 0,
@@ -363,11 +421,15 @@ export default function ScannerScreen() {
             isFood: 'true' as const,
             source: 'image',
             confidence: data.confidence,
-            ingredients: JSON.stringify(data.items.map((item: any) => ({
-                name: item.name,
-                portionLabel: item.estimated_grams ? `${item.estimated_grams}g` : 'Porção estimada',
-                calories: item.kcal
-            })))
+            ingredients: items.length
+              ? JSON.stringify(
+                  items.map((item: any) => ({
+                    name: typeof item?.name === 'string' ? item.name : 'Item',
+                    portionLabel: item?.estimated_grams ? `${item.estimated_grams}g` : 'Porção estimada',
+                    calories: typeof item?.kcal === 'number' ? item.kcal : 0,
+                  })),
+                )
+              : undefined,
          };
       }
 
@@ -427,32 +489,11 @@ export default function ScannerScreen() {
 
   if (!permission.granted) {
     return (
-      <View style={[styles.container, styles.permissionContainer]}>
+      <View style={styles.container}>
         <StatusBar barStyle="dark-content" />
-        <MaterialIcons name="no-photography" size={64} color={COLORS.gray500} />
-        <Text style={styles.permissionTitle}>Permissão necessária</Text>
-        <Text style={styles.permissionText}>
-          {permission.canAskAgain 
-            ? "A câmera é necessária para escanear alimentos e calcular calorias automaticamente."
-            : "O acesso à câmera está bloqueado. Por favor, ative nas configurações do seu dispositivo."}
-        </Text>
-        
-        <TouchableOpacity 
-            style={styles.primaryButton} 
-            onPress={permission.canAskAgain ? requestPermission : () => Linking.openSettings()}
-        >
-          <Text style={styles.primaryButtonText}>
-            {permission.canAskAgain ? "Permitir Câmera" : "Abrir Configurações"}
-          </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.secondaryButton} onPress={pickImage}>
-          <Text style={styles.secondaryButtonText}>Usar Galeria</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tertiaryButton} onPress={() => router.back()}>
-          <Text style={styles.tertiaryButtonText}>Voltar</Text>
-        </TouchableOpacity>
+        <View style={styles.permissionLoading}>
+          <ActivityIndicator size="large" color={COLORS.gray500} />
+        </View>
       </View>
     );
   }
@@ -568,6 +609,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.black,
+  },
+  permissionLoading: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.white,
   },
   permissionContainer: {
     backgroundColor: COLORS.white,

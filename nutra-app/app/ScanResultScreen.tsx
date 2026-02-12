@@ -16,6 +16,7 @@ import Animated, {
 import { supabase } from '../src/lib/supabase';
 import { useAuth } from '../src/context/AuthContext';
 import { useNutrition } from '../src/context/NutritionContext';
+import { useStreak } from '../src/context/StreakContext';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -251,6 +252,7 @@ export default function ScanResultScreen() {
   const insets = useSafeAreaInsets();
   const { session } = useAuth();
   const { addMeal } = useNutrition();
+  const { recordToday } = useStreak();
   
   // Parse params
   const rawName =
@@ -314,6 +316,8 @@ export default function ScanResultScreen() {
       created_at: new Date().toISOString()
     };
 
+    let savedSuccessfully = true;
+
     if (session?.user) {
       try {
         const { error } = await supabase.from('food_logs').insert({
@@ -330,6 +334,7 @@ export default function ScanResultScreen() {
         
         if (error) throw error;
       } catch (e) {
+        savedSuccessfully = false;
         console.error('Error saving to Supabase:', e);
       }
     }
@@ -340,6 +345,10 @@ export default function ScanResultScreen() {
       { protein: foodItem.protein, carbs: foodItem.carbs, fats: foodItem.fat },
       foodItem.image_url ?? undefined,
     );
+
+    if (savedSuccessfully) {
+      void recordToday();
+    }
 
     router.dismissTo('/(tabs)');
   };

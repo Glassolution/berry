@@ -94,6 +94,8 @@ export default function LoginScreen() {
          setErrorMessage(msg);
       } else if (msg === 'Network request failed') {
          setErrorMessage('Erro de conexão. Verifique sua internet.');
+      } else if (msg === 'Failed to fetch') {
+         setErrorMessage('Erro de conexão. Verifique sua internet.');
       } else {
          setErrorMessage(msg);
       }
